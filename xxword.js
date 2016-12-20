@@ -150,7 +150,7 @@ function initXWord(xmlString) {
 	iface.style.left = ifaceLeft + "px";
 	iface.style.top = ifaceTop + "px";
 	
-	iface.style.width = (window.innerWidth - ifaceLeft - canvasPadding - puzzlePadding) + "px";
+	iface.style.width = (window.innerWidth - ifaceLeft - canvasPadding) + "px";
 	iface.style.height = (window.innerHeight - ifaceTop - canvasPadding - puzzlePadding) + "px";
 
 	// black rect to fill puzzle area
