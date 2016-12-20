@@ -126,22 +126,34 @@ function drawPuzzle(puzzle) {
 function initXWord(xmlString) {
 	var puzzle = {};
 	var canvas = document.getElementById("xword");
+	var iface = document.getElementById("interface");
 	var ctx = canvas.getContext("2d");
 
 	puzzle.ctx = ctx; // store copy here that we can use when we pass puzzle around to functions
 
 	// Set up canvas position / size
-	var canvasPadding = 100;
-	canvas.style.left = canvasPadding / 2 + "px";
-	canvas.style.top = canvasPadding / 2 + "px";
-	ctx.canvas.width = window.innerWidth - canvasPadding;
-	ctx.canvas.height = window.innerHeight - canvasPadding;
+	var canvasPadding = 20;
+	canvas.style.left = canvasPadding + "px";
+	canvas.style.top = canvasPadding + "px";
+	ctx.canvas.height = window.innerHeight - 2 * canvasPadding;
+	ctx.canvas.width = ctx.canvas.height;
 
-	var puzzlePadding = 100;
-	puzzle.dimension = Math.min(ctx.canvas.width, ctx.canvas.height) - puzzlePadding
-	puzzle.x = puzzlePadding / 2;
-	puzzle.y = puzzlePadding / 2;
+
+	var puzzlePadding = 75;
+	puzzle.dimension = ctx.canvas.width - 2 * puzzlePadding;
+	puzzle.x = puzzlePadding;
+	puzzle.y = puzzlePadding;
+
+	var ifaceLeft = canvasPadding + ctx.canvas.width;
+	var ifaceTop = canvasPadding + puzzlePadding;
 	
+	iface.style.left = ifaceLeft + "px";
+	iface.style.top = ifaceTop + "px";
+	
+	iface.style.width = (window.innerWidth - ifaceLeft - canvasPadding - puzzlePadding) + "px";
+	iface.style.height = (window.innerHeight - ifaceTop - canvasPadding - puzzlePadding) + "px";
+
+	// black rect to fill puzzle area
 	ctx.fillStyle = "rgb(0, 0, 0)";
 	ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
 
