@@ -27,7 +27,7 @@ function initXWord(xmlString) {
 	var puzzleX = puzzlePadding / 2;
 	var puzzleY = puzzlePadding / 2;
 	
-	ctx.fillStyle = "rgb(200, 0, 0)";
+	ctx.fillStyle = "rgb(0, 0, 0)";
 	ctx.fillRect(puzzleX, puzzleY, puzzleDimension, puzzleDimension);
 
 
@@ -46,19 +46,69 @@ function initXWord(xmlString) {
 
 	var gridDimension = gridRows;
 
+	// cache xml element for each cell in 'cells'
+	// cells is accessed via cells[row][column]
+	var cells = new Array(gridDimension);
+	for(var i = 0; i < cells.length; i++) {
+		cells[i] = new Array(gridDimension);
+	}
+
+	for(var i = 0; i < gridDimension; i++) {
+		for(var j = 0; j < gridDimension; j++) {
+			// the xml iterates in column major order, but cells is in row major order,
+			//which is why j and i may seem backwards in the math below
+			var cellXml = gridXml.children[1 + j * gridDimension + i];
+			
+			var solution;
+			if(cellXml.hasAttribute("type") && cellXml.getAttribute("type") === "block") {
+				solution = "#";
+			}
+			else {				
+				solution = cellXml.getAttribute("solution");
+			}
+
+			var number;
+			if(cellXml.hasAttribute("number")) {
+				number = parseInt(cellXml.getAttribute("number"));
+			}
+			else {
+				number = -1;
+			}			
+			
+			cells[i][j] = {
+				row: i,
+				column: j,
+				solution: solution,
+				number: number,
+			};
+		}
+	}
+
+	// Draw cells
 	var cellMargin = 3;
 	var numMargins = gridDimension + 1;
 	
 	var cellDimension = (puzzleDimension - (cellMargin * numMargins)) / gridDimension;
+	
+	var fontHeight = (cellDimension / 3.5);
+	ctx.font = fontHeight + "px sans-serif";
 
-	ctx.fillStyle = "rgb(0, 0, 0)";
+	for(var i = 0; i < cells.length; i++) {
+		for(var j = 0; j < cells[0].length; j++) {
+			var cell = cells[i][j];
 
-	for(var i = 0; i < gridDimension; i++) {
-		for(var j = 0; j < gridDimension; j++) {
-			var x = puzzleX + cellMargin + j * (cellDimension + cellMargin);
-			var y = puzzleY + cellMargin + i * (cellDimension + cellMargin);
-			
-			ctx.fillRect(x, y, cellDimension, cellDimension);
+			cell.canvasX = puzzleX + cellMargin + j * (cellDimension + cellMargin);
+			cell.canvasY = puzzleY + cellMargin + i * (cellDimension + cellMargin);
+
+			if(cell.solution !== "#") {
+				ctx.fillStyle = "rgb(255, 255, 255)";
+				ctx.fillRect(cell.canvasX, cell.canvasY, cellDimension, cellDimension);
+
+				if(cell.number !== -1) {
+					ctx.fillStyle = "rgb(0, 0, 0)";
+					ctx.fillText(cell.number, cell.canvasX + 2, cell.canvasY + fontHeight + 2);
+				}
+			}
 		}
 	}
 }
