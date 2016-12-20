@@ -213,6 +213,19 @@ function highlightCells(puzzle, cells, color) {
 	}
 }
 
+function cellAtCanvasPos(puzzle, x, y) {
+	var cells = puzzle.cells;
+
+	var xIndex = Math.floor((x - (puzzle.x + puzzle.cellMargin / 2)) / (puzzle.cellDimension + puzzle.cellMargin));
+	var yIndex = Math.floor((y - (puzzle.y + puzzle.cellMargin / 2)) / (puzzle.cellDimension + puzzle.cellMargin));
+
+	if(xIndex >= 0 && xIndex < puzzle.gridDimension && yIndex >= 0 && yIndex < puzzle.gridDimension) {
+		return cells[yIndex][xIndex];
+	}
+
+	return null;
+}
+
 function drawPuzzle(puzzle) {
 	puzzle.ctx.fillStyle = "#000000";
 	puzzle.ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
@@ -337,17 +350,17 @@ function initXWord(xmlString) {
 	}
 
 	// Calculate x and y positions of each cell
-	var cellMargin = 3;
+	puzzle.cellMargin = 3;
 	var numMargins = puzzle.gridDimension + 1;
 	
-	puzzle.cellDimension = (puzzle.dimension - (cellMargin * numMargins)) / puzzle.gridDimension;
+	puzzle.cellDimension = (puzzle.dimension - (puzzle.cellMargin * numMargins)) / puzzle.gridDimension;
 	
 	for(var i = 0; i < puzzle.cells.length; i++) {
 		for(var j = 0; j < puzzle.cells[0].length; j++) {
 			var cell = puzzle.cells[i][j];
 
-			cell.canvasX = puzzle.x + cellMargin + j * (puzzle.cellDimension + cellMargin);
-			cell.canvasY = puzzle.y + cellMargin + i * (puzzle.cellDimension + cellMargin);
+			cell.canvasX = puzzle.x + puzzle.cellMargin + j * (puzzle.cellDimension + puzzle.cellMargin);
+			cell.canvasY = puzzle.y + puzzle.cellMargin + i * (puzzle.cellDimension + puzzle.cellMargin);
 		}
 	}
 
@@ -424,6 +437,28 @@ function initXWord(xmlString) {
 		// delete
 		else if(e.keyCode === 46) {
 			puzzle.cells[user.focus.y][user.focus.x].value = "";
+		}
+
+		drawPuzzle(puzzle);
+	});
+
+	canvas.addEventListener("mousedown", function(e) {
+		var user = puzzle.users[0];
+		
+		var canvasX = e.offsetX;
+		var canvasY = e.offsetY;
+
+		var clickedCell = cellAtCanvasPos(puzzle, canvasX, canvasY);
+
+		if(clickedCell !== null) {
+			// if already in focus, flip orientation
+			if(clickedCell.row === user.focus.y && clickedCell.column === user.focus.x) {
+				toggleOrientation(user);
+			}
+			else {
+				user.focus.x = clickedCell.column;
+				user.focus.y = clickedCell.row;
+			}
 		}
 
 		drawPuzzle(puzzle);
