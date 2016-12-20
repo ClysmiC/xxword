@@ -20,6 +20,17 @@ function toggleOrientation(user) {
 	}
 }
 
+function opposite(orientation) {
+	if(orientation === "down") {
+		return "across";
+	}
+	else if(orientation === "across") {
+		return "down";
+	}
+
+	return null;
+}
+
 // Returns all the cells that get focused when the focus
 // is on cell X, Y with orientation either "down" or "across".
 // The cells returned are in order, from first letter of the word
@@ -64,10 +75,18 @@ function getFocusedCells(puzzle, x, y, orientation) {
 	return result;
 }
 
-function moveFocusRight(puzzle, user) {
+function moveFocusRight(puzzle, user, wrap) {
 	var cells = puzzle.cells;
 
-	for(var i = user.focus.x + 1; i < puzzle.gridDimension; i++) {
+	if(wrap === undefined) {
+		wrap = false;
+	}
+
+	for(var i = user.focus.x + 1; wrap || i < puzzle.gridDimension; i++) {
+		if(wrap && i == puzzle.gridDimension) {
+			i = 0;
+		}
+		
 		if(cells[user.focus.y][i].solution !== "#") {
 			user.focus.x = i;
 			return;
@@ -75,10 +94,18 @@ function moveFocusRight(puzzle, user) {
 	}
 }
 
-function moveFocusLeft(puzzle, user) {
+function moveFocusLeft(puzzle, user, wrap) {
 	var cells = puzzle.cells;
 	
-	for(var i = user.focus.x - 1; i >= 0; i--) {
+	if(wrap === undefined) {
+		wrap = false;
+	}
+	
+	for(var i = user.focus.x - 1; wrap || i >= 0; i--) {
+		if(wrap && i == -1) {
+			i = puzzle.gridDimension - 1;
+		}
+		
 		if(cells[user.focus.y][i].solution !== "#") {
 			user.focus.x = i;
 			return;
@@ -86,10 +113,18 @@ function moveFocusLeft(puzzle, user) {
 	}
 }
 
-function moveFocusUp(puzzle, user) {
+function moveFocusUp(puzzle, user, wrap) {
 	var cells = puzzle.cells;
 	
-	for(var i = user.focus.y - 1; i >= 0; i--) {
+	if(wrap === undefined) {
+		wrap = false;
+	}
+	
+	for(var i = user.focus.y - 1; wrap || i >= 0; i--) {
+		if(wrap && i == -1) {
+			i = puzzle.gridDimension - 1;
+		}
+		
 		if(cells[i][user.focus.x].solution !== "#") {
 			user.focus.y = i;
 			return;
@@ -97,10 +132,18 @@ function moveFocusUp(puzzle, user) {
 	}
 }
 
-function moveFocusDown(puzzle, user) {
+function moveFocusDown(puzzle, user, wrap) {
 	var cells = puzzle.cells;
-
-	for(var i = user.focus.y + 1; i < puzzle.gridDimension; i++) {
+	
+	if(wrap === undefined) {
+		wrap = false;
+	}
+	
+	for(var i = user.focus.y + 1; wrap || i < puzzle.gridDimension; i++) {
+		if(wrap && i == puzzle.gridDimension) {
+			i = 0;
+		}
+		
 		if(cells[i][user.focus.x].solution !== "#") {
 			user.focus.y = i;
 			return;
@@ -249,11 +292,12 @@ function drawPuzzle(puzzle) {
 		// note: color's l should be somewhere in the neighborhood of 50.
 		// lighter colors have fixed l -- so make sure the base color doesn't
 		// have a higher l than that
-		var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 85%";
+		var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 75%";
 
 		var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
+		var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
 
-		// highlight row/col
+		highlightCells(puzzle, perpendicularCells, "#DDDDDD");		
 		highlightCells(puzzle, focusedCells, colorLighter);
 
 		// highlight focused cell
@@ -375,7 +419,7 @@ function initXWord(xmlString) {
 	puzzle.users = [
 		{
 			name: "Andrew", // TODO: customizable
-			color: { h: 60, s: 100, l: 50 },
+			color: { h: 60, s: 100, l: 45 },
 			focus: { x: 0, y: 0 },
 			orientation: "across"
 		},
@@ -387,22 +431,24 @@ function initXWord(xmlString) {
 	// Add keyboard listeners for navigating with arrow keys
 	document.body.addEventListener('keydown', function(e) {
 		var user = puzzle.users[0];
+
+		// TODO: setting option for wraparound or not
 		
 		// arrow left
 		if(e.keyCode === 37) {
-			moveFocusLeft(puzzle, user);
+			moveFocusLeft(puzzle, user, true);
 		}
 		// arrow up
 		else if(e.keyCode === 38) {
-			moveFocusUp(puzzle, user);
+			moveFocusUp(puzzle, user, true);
 		}
 		// arrow right
 		else if(e.keyCode === 39) {
-			moveFocusRight(puzzle, user);
+			moveFocusRight(puzzle, user, true);
 		}
 		// arrow down
 		else if(e.keyCode === 40) {
-			moveFocusDown(puzzle, user);
+			moveFocusDown(puzzle, user, true);
 		}
 
 		
