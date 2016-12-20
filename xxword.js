@@ -11,6 +11,15 @@ function padNum(num, desiredLength) {
 	return result;
 }
 
+function toggleOrientation(user) {
+	if(user.orientation === "down") {
+		user.orientation = "across";
+	}
+	else if(user.orientation === "across") {
+		user.orientation = "down";
+	}
+}
+
 // Returns all the cells that get focused when the focus
 // is on cell X, Y with orientation either "down" or "across".
 // The cells returned are in order, from first letter of the word
@@ -55,6 +64,122 @@ function getFocusedCells(puzzle, x, y, orientation) {
 	return result;
 }
 
+function moveFocusRight(puzzle, user) {
+	var cells = puzzle.cells;
+
+	for(var i = user.focus.x + 1; i < puzzle.gridDimension; i++) {
+		if(cells[user.focus.y][i].solution !== "#") {
+			user.focus.x = i;
+			return;
+		}
+	}
+}
+
+function moveFocusLeft(puzzle, user) {
+	var cells = puzzle.cells;
+	
+	for(var i = user.focus.x - 1; i >= 0; i--) {
+		if(cells[user.focus.y][i].solution !== "#") {
+			user.focus.x = i;
+			return;
+		}
+	}
+}
+
+function moveFocusUp(puzzle, user) {
+	var cells = puzzle.cells;
+	
+	for(var i = user.focus.y - 1; i >= 0; i--) {
+		if(cells[i][user.focus.x].solution !== "#") {
+			user.focus.y = i;
+			return;
+		}
+	}
+}
+
+function moveFocusDown(puzzle, user) {
+	var cells = puzzle.cells;
+
+	for(var i = user.focus.y + 1; i < puzzle.gridDimension; i++) {
+		if(cells[i][user.focus.x].solution !== "#") {
+			user.focus.y = i;
+			return;
+		}
+	}
+}
+
+function moveFocusRightSoft(puzzle, user) {
+	var cells = puzzle.cells;
+
+	if(user.focus.x < puzzle.gridDimension - 1 && cells[user.focus.y][user.focus.x + 1].solution !== "#") {
+		user.focus.x += 1;
+	}
+}
+
+function moveFocusLeftSoft(puzzle, user) {
+	var cells = puzzle.cells;
+	
+	if(user.focus.x > 0 && cells[user.focus.y][user.focus.x - 1].solution !== "#") {
+		user.focus.x -= 1;
+	}
+}
+
+function moveFocusUpSoft(puzzle, user) {
+	var cells = puzzle.cells;
+	
+	if(user.focus.y > 0 && cells[user.focus.y - 1][user.focus.x].solution !== "#") {
+		user.focus.y -= 1;
+	}
+}
+
+function moveFocusDownSoft(puzzle, user) {
+	var cells = puzzle.cells;
+
+	if(user.focus.y < puzzle.gridDimension - 1 && cells[user.focus.y + 1][user.focus.x].solution !== "#") {
+		user.focus.y += 1;
+	}
+}
+
+function advanceFocus(puzzle, user) {
+	if(user.orientation == "across") {
+		moveFocusRight(puzzle, user);
+	}
+	else if(user.orientation == "down") {
+		moveFocusDown(puzzle, user);
+	}
+}
+
+function retreatFocus(puzzle, user) {
+	if(user.orientation == "across") {
+		moveFocusLeft(puzzle, user);
+	}
+	else if(user.orientation == "down") {
+		moveFocusUp(puzzle, user);
+	}
+}
+
+// Soft advance won't skip over blocks.
+// Used, for example, when typing the last letter of a word and the user
+// sets preferences to not skip over block into next word.
+// Note: arrow key presses are never soft advances
+function softAdvanceFocus(puzzle, user) {
+	if(user.orientation == "across") {
+		moveFocusRightSoft(puzzle, user);
+	}
+	else if(user.orientation == "down") {
+		moveFocusDownSoft(puzzle, user);
+	}
+}
+
+function softRetreatFocus(puzzle, user) {
+	if(user.orientation == "across") {
+		moveFocusLeftSoft(puzzle, user);
+	}
+	else if(user.orientation == "down") {
+		moveFocusUpSoft(puzzle, user);
+	}
+}
+
 function drawCellNumber(puzzle, cell) {
 	if(cell.number !== -1) {
 		puzzle.ctx.font = puzzle.numberFont;
@@ -66,7 +191,7 @@ function drawCellNumber(puzzle, cell) {
 }
 
 function drawCellValue(puzzle, cell) {
-	if(cell.value !== "") {
+	if(cell.value !== "" && cell.value !== " ") {
 		puzzle.ctx.font = puzzle.valueFont;
 		puzzle.ctx.fillStyle = "rgb(0, 0, 0)";
 		puzzle.ctx.textAlign = "center";
@@ -206,22 +331,16 @@ function initXWord(xmlString) {
 				column: j,
 				solution: solution,
 				number: number,
-				value: solution, //"",   // user-entered value
+				value: "",   // user-entered value
 			};
 		}
 	}
 
-	// Draw cells
+	// Calculate x and y positions of each cell
 	var cellMargin = 3;
 	var numMargins = puzzle.gridDimension + 1;
 	
 	puzzle.cellDimension = (puzzle.dimension - (cellMargin * numMargins)) / puzzle.gridDimension;
-	
-	puzzle.numberFontHeight = (puzzle.cellDimension / 4);
-	puzzle.numberFont = puzzle.numberFontHeight + "px sans-serif";
-
-	puzzle.valueFontHeight = (puzzle.cellDimension * .75);
-	puzzle.valueFont = puzzle.valueFontHeight + "px sans-serif";
 	
 	for(var i = 0; i < puzzle.cells.length; i++) {
 		for(var j = 0; j < puzzle.cells[0].length; j++) {
@@ -232,6 +351,14 @@ function initXWord(xmlString) {
 		}
 	}
 
+	// Calculate font metrics
+	puzzle.numberFontHeight = (puzzle.cellDimension / 4);
+	puzzle.numberFont = puzzle.numberFontHeight + "px sans-serif";
+
+	puzzle.valueFontHeight = (puzzle.cellDimension * .75);
+	puzzle.valueFont = puzzle.valueFontHeight + "px sans-serif";
+
+	// Set up initial user list
 	puzzle.users = [
 		{
 			name: "Andrew", // TODO: customizable
@@ -240,8 +367,67 @@ function initXWord(xmlString) {
 			orientation: "across"
 		},
 	];
+
 	
 	drawPuzzle(puzzle);
+
+	// Add keyboard listeners for navigating with arrow keys
+	document.body.addEventListener('keydown', function(e) {
+		var user = puzzle.users[0];
+		
+		// arrow left
+		if(e.keyCode === 37) {
+			moveFocusLeft(puzzle, user);
+		}
+		// arrow up
+		else if(e.keyCode === 38) {
+			moveFocusUp(puzzle, user);
+		}
+		// arrow right
+		else if(e.keyCode === 39) {
+			moveFocusRight(puzzle, user);
+		}
+		// arrow down
+		else if(e.keyCode === 40) {
+			moveFocusDown(puzzle, user);
+		}
+
+		
+		// space bar
+		else if(e.keyCode === 32) {
+			toggleOrientation(user);
+		}
+
+		// a-z
+		else if(e.keyCode >= 65 && e.keyCode <= 90) {
+			var letter = e.key.toUpperCase();
+			
+			if(letter.length !== 1) {
+				alert("Letter length is not 1 for the entered letter: " + letter);
+				return;
+			}
+
+			puzzle.cells[user.focus.y][user.focus.x].value = letter;
+
+			// TODO: use setting on page to determine whether to soft- or hard-advance here
+			softAdvanceFocus(puzzle, user);
+		}
+
+		// backspace
+		else if(e.keyCode === 8) {
+			puzzle.cells[user.focus.y][user.focus.x].value = "";
+
+			// TODO: use setting on page to determine whether to soft- or hard-retreat here
+			softRetreatFocus(puzzle, user);
+		}
+
+		// delete
+		else if(e.keyCode === 46) {
+			puzzle.cells[user.focus.y][user.focus.x].value = "";
+		}
+
+		drawPuzzle(puzzle);
+	});
 }
 
 var xwordBaseUrl = "http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/";
