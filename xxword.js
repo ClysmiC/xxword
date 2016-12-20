@@ -75,7 +75,7 @@ function drawCellValue(puzzle, cell) {
 	}
 }
 
-// note: call this with color = "rgb(255, 255, 255)" to "clear" highlights
+// note: call this with color = "#FFFFFF" to "clear" highlights
 function highlightCells(puzzle, cells, color) {
 	for (var i = 0; i < cells.length; i++) {
 		var cell = cells[i];
@@ -85,6 +85,41 @@ function highlightCells(puzzle, cells, color) {
 		
 		drawCellNumber(puzzle, cell);
 		drawCellValue(puzzle, cell);
+	}
+}
+
+function drawPuzzle(puzzle) {
+	puzzle.ctx.fillStyle = "#000000";
+	puzzle.ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
+	
+	// Draw base puzzle
+	for(var i = 0; i < puzzle.cells.length; i++) {
+		for(var j = 0; j < puzzle.cells[0].length; j++) {
+			var cell = puzzle.cells[i][j];
+			
+			if(cell.solution !== "#") {
+				highlightCells(puzzle, [cell], "rgb(255, 255, 255)");
+			}
+		}
+	}
+
+	// Draw user highlights
+	for(var i = 0; i < puzzle.users.length; i++) {
+		var user = puzzle.users[i];
+		var color = "hsl(" + user.color.h + ", " + user.color.s + "%, " + user.color.l + "%)";
+
+		// note: color's l should be somewhere in the neighborhood of 50.
+		// lighter colors have fixed l -- so make sure the base color doesn't
+		// have a higher l than that
+		var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 85%";
+
+		var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
+
+		// highlight row/col
+		highlightCells(puzzle, focusedCells, colorLighter);
+
+		// highlight focused cell
+		highlightCells(puzzle, [puzzle.cells[user.focus.y][user.focus.x]], color);
 	}
 }
 
@@ -103,12 +138,12 @@ function initXWord(xmlString) {
 	ctx.canvas.height = window.innerHeight - canvasPadding;
 
 	var puzzlePadding = 100;
-	var puzzleDimension = Math.min(ctx.canvas.width, ctx.canvas.height) - puzzlePadding
-	var puzzleX = puzzlePadding / 2;
-	var puzzleY = puzzlePadding / 2;
+	puzzle.dimension = Math.min(ctx.canvas.width, ctx.canvas.height) - puzzlePadding
+	puzzle.x = puzzlePadding / 2;
+	puzzle.y = puzzlePadding / 2;
 	
 	ctx.fillStyle = "rgb(0, 0, 0)";
-	ctx.fillRect(puzzleX, puzzleY, puzzleDimension, puzzleDimension);
+	ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
 
 	// Set up xml parsing
 	var parser = new DOMParser();
@@ -168,7 +203,7 @@ function initXWord(xmlString) {
 	var cellMargin = 3;
 	var numMargins = puzzle.gridDimension + 1;
 	
-	puzzle.cellDimension = (puzzleDimension - (cellMargin * numMargins)) / puzzle.gridDimension;
+	puzzle.cellDimension = (puzzle.dimension - (cellMargin * numMargins)) / puzzle.gridDimension;
 	
 	puzzle.numberFontHeight = (puzzle.cellDimension / 4);
 	puzzle.numberFont = puzzle.numberFontHeight + "px sans-serif";
@@ -180,16 +215,21 @@ function initXWord(xmlString) {
 		for(var j = 0; j < puzzle.cells[0].length; j++) {
 			var cell = puzzle.cells[i][j];
 
-			cell.canvasX = puzzleX + cellMargin + j * (puzzle.cellDimension + cellMargin);
-			cell.canvasY = puzzleY + cellMargin + i * (puzzle.cellDimension + cellMargin);
-
-			if(cell.solution !== "#") {
-				highlightCells(puzzle, [cell], "rgb(255, 255, 255)");
-			}
+			cell.canvasX = puzzle.x + cellMargin + j * (puzzle.cellDimension + cellMargin);
+			cell.canvasY = puzzle.y + cellMargin + i * (puzzle.cellDimension + cellMargin);
 		}
 	}
 
-	highlightCells(puzzle, getFocusedCells(puzzle, 7, 0, "across"), "rgb(255, 255, 127)");
+	puzzle.users = [
+		{
+			name: "Andrew", // TODO: customizable
+			color: { h: 60, s: 100, l: 50 },
+			focus: { x: 0, y: 0 },
+			orientation: "across"
+		},
+	];
+	
+	drawPuzzle(puzzle);
 }
 
 var xwordBaseUrl = "http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/";
