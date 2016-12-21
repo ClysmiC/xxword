@@ -38,3 +38,17 @@ select {
    	-ms-user-select: none;
    	user-select: none;
 }
+
+.clueList {
+	font-family: sans-serif;
+	width: 100%;
+	height: 10em;
+	border: 1px solid black;
+	overflow-y: scroll;
+}
+
+.clue {
+	pointer-events: none;
+	font-family: sans-serif;
+	margin: 8px 5px;
+}

@@ -426,7 +426,7 @@ function initXWord(xmlString) {
 	}
 
 	// Calculate x and y positions of each cell
-	puzzle.cellMargin = 3;
+	puzzle.cellMargin = 2;
 	var numMargins = puzzle.gridDimension + 1;
 	
 	puzzle.cellDimension = (puzzle.dimension - (puzzle.cellMargin * numMargins)) / puzzle.gridDimension;
@@ -466,28 +466,30 @@ function initXWord(xmlString) {
 		var acrossClues = acrossXml.getElementsByTagName("clue");
 		var downClues = downXml.getElementsByTagName("clue");
 		
-		var acrossSelect = document.getElementById("acrossSelect");
+		var acrossList = document.getElementById("acrossList");
 		for(var i = 0; i < acrossClues.length; i++) {
 			var clue = acrossClues[i];
 			var number = clue.getAttribute("number");
 			var text = clue.textContent;
 
-			var o = document.createElement("option");
-			o.text = number + ". " + text;
-			
-			acrossSelect.add(o);
+			var item = document.createElement("div");
+			item.className = "clue"
+			item.innerHTML = number + ". " + text;
+
+			acrossList.appendChild(item);
 		}
 
-		var downSelect = document.getElementById("downSelect");
+		var downList = document.getElementById("downList");
 		for(var i = 0; i < downClues.length; i++) {
 			var clue = downClues[i];
 			var number = clue.getAttribute("number");
 			var text = clue.textContent;
 
-			var o = document.createElement("option");
-			o.text = number + ". " + text;
-			
-			downSelect.add(o);
+			var item = document.createElement("div");
+			item.className = "clue"
+			item.innerHTML = number + ". " + text;
+
+			downList.appendChild(item);
 		}
 	}
 
