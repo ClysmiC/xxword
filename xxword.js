@@ -496,7 +496,7 @@ function initXWord(xmlString) {
 
 		var clickedCell = cellAtCanvasPos(puzzle, canvasX, canvasY);
 
-		if(clickedCell !== null) {
+		if(clickedCell !== null && clickedCell.solution !== "#") {
 			// if already in focus, flip orientation
 			if(clickedCell.row === user.focus.y && clickedCell.column === user.focus.x) {
 				toggleOrientation(user);
