@@ -11,3 +11,12 @@
 	margin: 0px;
 	padding: 0px;
 }
+
+.clues {
+	margin: 1em;
+}
+
+select {
+	margin-top: .5em;
+	width: 100%
+}

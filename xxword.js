@@ -305,35 +305,57 @@ function drawPuzzle(puzzle) {
 	}
 }
 
+function isCorrect(puzzle) {
+	for(var i = 0; i < puzzle.cells.length; i++) {
+		for(var j = 0; j < puzzle.cells[0].length; j++) {
+			var cell = puzzle.cells[i][j];
+			
+			if(cell.solution !== "#" && cell.value !== cell.solution) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 function initXWord(xmlString) {
-	var puzzle = {};
+	var puzzle = {
+		solved: false,
+	};
+	
 	var canvas = document.getElementById("xword");
 	var iface = document.getElementById("interface");
 	var ctx = canvas.getContext("2d");
 
 	puzzle.ctx = ctx; // store copy here that we can use when we pass puzzle around to functions
 
-	// Set up canvas position / size
-	var canvasPadding = 20;
-	canvas.style.left = canvasPadding + "px";
-	canvas.style.top = canvasPadding + "px";
-	ctx.canvas.height = window.innerHeight - 2 * canvasPadding;
+	var canvasContainingWidth = .65 * (window.innerWidth);
+	var canvasContainingHeight = .9 * (window.innerHeight);
+	
+	ctx.canvas.height = Math.min(
+		canvasContainingWidth,
+		canvasContainingHeight
+	);
 	ctx.canvas.width = ctx.canvas.height;
 
+	canvas.style.left = ((canvasContainingWidth - ctx.canvas.width) / 2) + "px";
+	
+	canvas.style.top = ((canvasContainingHeight - ctx.canvas.height) / 2) + "px";
 
 	var puzzlePadding = 75;
 	puzzle.dimension = ctx.canvas.width - 2 * puzzlePadding;
 	puzzle.x = puzzlePadding;
 	puzzle.y = puzzlePadding;
 
-	var ifaceLeft = canvasPadding + ctx.canvas.width;
-	var ifaceTop = canvasPadding + puzzlePadding;
+	var ifaceLeft = canvasContainingWidth;
+	var ifaceTop = 20;
 	
 	iface.style.left = ifaceLeft + "px";
 	iface.style.top = ifaceTop + "px";
 	
-	iface.style.width = (window.innerWidth - ifaceLeft - canvasPadding) + "px";
-	iface.style.height = (window.innerHeight - ifaceTop - canvasPadding - puzzlePadding) + "px";
+	iface.style.width = (window.innerWidth - ifaceLeft - 20) + "px";
+	iface.style.height = (window.innerHeight - ifaceTop - 20) + "px";
 
 	// black rect to fill puzzle area
 	ctx.fillStyle = "rgb(0, 0, 0)";
@@ -425,67 +447,124 @@ function initXWord(xmlString) {
 		},
 	];
 
-	
-	drawPuzzle(puzzle);
+	// Parse and add across and down clues to html
+	{		
+		var cluesXml = xml.getElementsByTagName("clues");
+		var acrossXml = cluesXml[0];
+		var downXml = cluesXml[1];
+
+		var acrossClues = acrossXml.getElementsByTagName("clue");
+		var downClues = downXml.getElementsByTagName("clue");
+		
+		var acrossSelect = document.getElementById("acrossSelect");
+		for(var i = 0; i < acrossClues.length; i++) {
+			var clue = acrossClues[i];
+			var number = clue.getAttribute("number");
+			var text = clue.textContent;
+
+			var o = document.createElement("option");
+			o.text = number + ". " + text;
+			
+			acrossSelect.add(o);
+		}
+
+		var downSelect = document.getElementById("downSelect");
+		for(var i = 0; i < downClues.length; i++) {
+			var clue = downClues[i];
+			var number = clue.getAttribute("number");
+			var text = clue.textContent;
+
+			var o = document.createElement("option");
+			o.text = number + ". " + text;
+			
+			downSelect.add(o);
+		}
+	}
 
 	// Add keyboard listeners for navigating with arrow keys
 	document.body.addEventListener('keydown', function(e) {
 		var user = puzzle.users[0];
-
-		// TODO: setting option for wraparound or not
+		var redrawPuzzle = false;
+		var valuesChanged = false;
 		
+		// TODO: setting option for wraparound or not
 		// arrow left
 		if(e.keyCode === 37) {
 			moveFocusLeft(puzzle, user, true);
+			redrawPuzzle = true;
 		}
 		// arrow up
 		else if(e.keyCode === 38) {
 			moveFocusUp(puzzle, user, true);
+			redrawPuzzle = true;
 		}
 		// arrow right
 		else if(e.keyCode === 39) {
 			moveFocusRight(puzzle, user, true);
+			redrawPuzzle = true;
 		}
 		// arrow down
 		else if(e.keyCode === 40) {
 			moveFocusDown(puzzle, user, true);
+			redrawPuzzle = true;
 		}
 
 		
 		// space bar
 		else if(e.keyCode === 32) {
 			toggleOrientation(user);
+			redrawPuzzle = true;
 		}
 
-		// a-z
-		else if(e.keyCode >= 65 && e.keyCode <= 90) {
-			var letter = e.key.toUpperCase();
-			
-			if(letter.length !== 1) {
-				alert("Letter length is not 1 for the entered letter: " + letter);
-				return;
+		else if (!puzzle.solved) {
+			// a-z
+			if(e.keyCode >= 65 && e.keyCode <= 90) {
+				var letter = e.key.toUpperCase();
+				
+				if(letter.length !== 1) {
+					alert("Letter length is not 1 for the entered letter: " + letter);
+					return;
+				}
+
+				puzzle.cells[user.focus.y][user.focus.x].value = letter;
+
+				// TODO: use setting on page to determine whether to soft- or hard-advance here
+				softAdvanceFocus(puzzle, user);
+
+				redrawPuzzle = true;
+				valuesChanged = true;
 			}
 
-			puzzle.cells[user.focus.y][user.focus.x].value = letter;
+			// backspace
+			else if(e.keyCode === 8) {
+				puzzle.cells[user.focus.y][user.focus.x].value = "";
 
-			// TODO: use setting on page to determine whether to soft- or hard-advance here
-			softAdvanceFocus(puzzle, user);
+				// TODO: use setting on page to determine whether to soft- or hard-retreat here
+				softRetreatFocus(puzzle, user);
+
+				redrawPuzzle = true;
+				valuesChanged = true;
+			}
+
+			// delete
+			else if(e.keyCode === 46) {
+				puzzle.cells[user.focus.y][user.focus.x].value = "";
+
+				redrawPuzzle = true;
+				valuesChanged = true;
+			}
 		}
 
-		// backspace
-		else if(e.keyCode === 8) {
-			puzzle.cells[user.focus.y][user.focus.x].value = "";
-
-			// TODO: use setting on page to determine whether to soft- or hard-retreat here
-			softRetreatFocus(puzzle, user);
+		if(redrawPuzzle) {
+			drawPuzzle(puzzle);
 		}
 
-		// delete
-		else if(e.keyCode === 46) {
-			puzzle.cells[user.focus.y][user.focus.x].value = "";
+		if(!puzzle.solved && valuesChanged) {
+			if(isCorrect(puzzle)) {
+				puzzle.solved = true;
+				alert("You have completed the puzzle!");
+			}
 		}
-
-		drawPuzzle(puzzle);
 	});
 
 	canvas.addEventListener("mousedown", function(e) {
@@ -509,6 +588,9 @@ function initXWord(xmlString) {
 
 		drawPuzzle(puzzle);
 	});
+
+	
+	drawPuzzle(puzzle);
 }
 
 var xwordBaseUrl = "http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/";

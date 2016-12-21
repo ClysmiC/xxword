@@ -11,9 +11,31 @@
 	<canvas id="xword" width="600" height="600">xxword requires an HTML5-compatible browser that supports the &lt;canvas&gt; tag.</canvas>
 
 	<div id="interface">
+	  <div id="clues">
+		<div id="acrossClues" class="clues">
+		  <strong>ACROSS</strong>
+
+		  <br>
+
+		  <select id="acrossSelect" size="10">
+		  </select>
+		</div>
+
+		<div id="downClues" class="clues">
+		  <strong>DOWN</strong>
+
+		  <br>
+		  
+		  <select id="downSelect" size="10">
+		  </select>
+		</div>
+		
+	  </div>
 	</div>
 
 	<a href="http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/la161219.xml">Dev shortcut for analyzing xml structure.</a>
+
+	<span id="decoder" style="display:none;"></span>
 
 	<script src="xxword.js"></script>
   </body>
