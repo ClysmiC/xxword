@@ -290,16 +290,39 @@ function drawCellValue(puzzle, cell) {
 }
 
 // note: call this with color = "#FFFFFF" to "clear" highlights
-function highlightCells(puzzle, cells, color) {
+function drawCells(puzzle, cells, color) {
 	for (var i = 0; i < cells.length; i++) {
-		var cell = cells[i];
-		
-		puzzle.ctx.fillStyle = color;
-		puzzle.ctx.fillRect(cell.canvasX, cell.canvasY, puzzle.cellDimension, puzzle.cellDimension);
-		
-		drawCellNumber(puzzle, cell);
-		drawCellValue(puzzle, cell);
+		drawCell(puzzle, cells[i], color);
 	}
+}
+
+function drawCell(puzzle, cell, color) {
+	puzzle.ctx.fillStyle = color;
+	puzzle.ctx.fillRect(cell.canvasX, cell.canvasY, puzzle.cellDimension, puzzle.cellDimension);
+	
+	if(cell.circled) {
+		var startAngle = 0;
+		var endAngle = 2 * Math.PI;
+
+		if(cell.number !== -1) {
+			startAngle = 1.4 * Math.PI;
+			endAngle = 1.1 * Math.PI;
+		}
+		
+		puzzle.ctx.fillStyle = "#000000";
+		puzzle.ctx.beginPath();
+		puzzle.ctx.arc(
+			cell.canvasX + puzzle.cellDimension / 2,
+			cell.canvasY + puzzle.cellDimension / 2,
+			puzzle.cellDimension / 2,
+			startAngle,
+			endAngle);
+		puzzle.ctx.stroke();
+	}
+	
+	drawCellNumber(puzzle, cell);
+	drawCellValue(puzzle, cell);
+
 }
 
 function cellAtCanvasPos(puzzle, x, y) {
@@ -325,7 +348,7 @@ function drawPuzzle(puzzle) {
 			var cell = puzzle.cells[i][j];
 			
 			if(cell.solution !== "#") {
-				highlightCells(puzzle, [cell], "rgb(255, 255, 255)");
+				drawCell(puzzle, cell, "rgb(255, 255, 255)");
 			}
 		}
 	}
@@ -343,11 +366,11 @@ function drawPuzzle(puzzle) {
 		var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
 		var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
 
-		highlightCells(puzzle, perpendicularCells, secondaryFocusColor);		
-		highlightCells(puzzle, focusedCells, colorLighter);
+		drawCells(puzzle, perpendicularCells, secondaryFocusColor);		
+		drawCells(puzzle, focusedCells, colorLighter);
 
 		// highlight focused cell
-		highlightCells(puzzle, [puzzle.cells[user.focus.y][user.focus.x]], color);
+		drawCell(puzzle, puzzle.cells[user.focus.y][user.focus.x], color);
 	}
 }
 
@@ -484,7 +507,10 @@ function initXWord(xmlString) {
 			}
 			else {
 				number = -1;
-			}			
+			}
+
+			var circled = cellXml.hasAttribute("background-shape") && cellXml.getAttribute("background-shape") === "circle";
+			
 			
 			puzzle.cells[i][j] = {
 				row: i,
@@ -492,6 +518,7 @@ function initXWord(xmlString) {
 				solution: solution,
 				number: number,
 				value: "",   // user-entered value
+				circled: circled,
 			};
 		}
 	}
