@@ -1,3 +1,5 @@
+var secondaryFocusColor = "#DDDDDD"
+
 // TODO: build DOM differently if mobile...
 // make xword take up entire screen
 // and just give the clue at the top when a cell
@@ -97,7 +99,7 @@ function moveFocusRight(puzzle, user, wrap) {
 	}
 
 	for(var i = user.focus.x + 1; wrap || i < puzzle.gridDimension; i++) {
-		if(wrap && i == puzzle.gridDimension) {
+		if(wrap && i === puzzle.gridDimension) {
 			i = 0;
 		}
 		
@@ -116,7 +118,7 @@ function moveFocusLeft(puzzle, user, wrap) {
 	}
 	
 	for(var i = user.focus.x - 1; wrap || i >= 0; i--) {
-		if(wrap && i == -1) {
+		if(wrap && i === -1) {
 			i = puzzle.gridDimension - 1;
 		}
 		
@@ -135,7 +137,7 @@ function moveFocusUp(puzzle, user, wrap) {
 	}
 	
 	for(var i = user.focus.y - 1; wrap || i >= 0; i--) {
-		if(wrap && i == -1) {
+		if(wrap && i === -1) {
 			i = puzzle.gridDimension - 1;
 		}
 		
@@ -154,7 +156,7 @@ function moveFocusDown(puzzle, user, wrap) {
 	}
 	
 	for(var i = user.focus.y + 1; wrap || i < puzzle.gridDimension; i++) {
-		if(wrap && i == puzzle.gridDimension) {
+		if(wrap && i === puzzle.gridDimension) {
 			i = 0;
 		}
 		
@@ -198,21 +200,51 @@ function moveFocusDownSoft(puzzle, user) {
 }
 
 function advanceFocus(puzzle, user) {
-	if(user.orientation == "across") {
+	if(user.orientation === "across") {
 		moveFocusRight(puzzle, user);
 	}
-	else if(user.orientation == "down") {
+	else if(user.orientation === "down") {
 		moveFocusDown(puzzle, user);
 	}
 }
 
 function retreatFocus(puzzle, user) {
-	if(user.orientation == "across") {
+	if(user.orientation === "across") {
 		moveFocusLeft(puzzle, user);
 	}
-	else if(user.orientation == "down") {
+	else if(user.orientation === "down") {
 		moveFocusUp(puzzle, user);
 	}
+}
+
+function cellToNumber(puzzle, x, y, orientation) {
+	var cells = puzzle.cells;
+	
+	if(orientation !== "down" && orientation !== "across") {
+		return -1;
+	}
+
+	if(cells[y][x].solution === "#") {
+		return -1;
+	}
+
+	var deltaX = 0;
+	var deltaY = 0;
+
+	if(orientation === "down") {
+		deltaY = 1;
+	}
+	else {
+		deltaX = 1;
+	}
+
+	// Iterate backwards until at the first letter of the word
+	while(x - deltaX >= 0 && y - deltaY >= 0 && cells[y - deltaY][x - deltaX].solution !== "#") {
+		x -= deltaX;
+		y -= deltaY;
+	}
+
+	return cells[y][x].number;
 }
 
 // Soft advance won't skip over blocks.
@@ -220,19 +252,19 @@ function retreatFocus(puzzle, user) {
 // sets preferences to not skip over block into next word.
 // Note: arrow key presses are never soft advances
 function softAdvanceFocus(puzzle, user) {
-	if(user.orientation == "across") {
+	if(user.orientation === "across") {
 		moveFocusRightSoft(puzzle, user);
 	}
-	else if(user.orientation == "down") {
+	else if(user.orientation === "down") {
 		moveFocusDownSoft(puzzle, user);
 	}
 }
 
 function softRetreatFocus(puzzle, user) {
-	if(user.orientation == "across") {
+	if(user.orientation === "across") {
 		moveFocusLeftSoft(puzzle, user);
 	}
-	else if(user.orientation == "down") {
+	else if(user.orientation === "down") {
 		moveFocusUpSoft(puzzle, user);
 	}
 }
@@ -311,7 +343,7 @@ function drawPuzzle(puzzle) {
 		var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
 		var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
 
-		highlightCells(puzzle, perpendicularCells, "#DDDDDD");		
+		highlightCells(puzzle, perpendicularCells, secondaryFocusColor);		
 		highlightCells(puzzle, focusedCells, colorLighter);
 
 		// highlight focused cell
@@ -377,13 +409,14 @@ function initXWord(xmlString) {
 
 	puzzle.ctx = ctx; // store copy here that we can use when we pass puzzle around to functions
 
-	var canvasContainingWidth = .65 * (window.innerWidth);
-	var canvasContainingHeight = .9 * (window.innerHeight);
+	var canvasContainingWidth = Math.max(.65 * (window.innerWidth), 700);
+	var canvasContainingHeight = Math.max(.9 * (window.innerHeight), 700);
 	
 	ctx.canvas.height = Math.min(
 		canvasContainingWidth,
 		canvasContainingHeight
 	);
+
 	ctx.canvas.width = ctx.canvas.height;
 
 	canvas.style.left = ((canvasContainingWidth - ctx.canvas.width) / 2) + "px";
@@ -401,7 +434,7 @@ function initXWord(xmlString) {
 	iface.style.left = ifaceLeft + "px";
 	iface.style.top = ifaceTop + "px";
 	
-	iface.style.width = (window.innerWidth - ifaceLeft - 20) + "px";
+	iface.style.width = Math.max((window.innerWidth - ifaceLeft - 20), 300) + "px";
 	iface.style.height = (window.innerHeight - ifaceTop - 20) + "px";
 
 	// black rect to fill puzzle area
@@ -516,6 +549,12 @@ function initXWord(xmlString) {
 			var user = puzzle.users[0];
 			
 			highlightClue(puzzle, number, orientation, hslString(user));
+			highlightClue(
+				puzzle,
+				cellToNumber(puzzle, puzzle.numToXY[number].x, puzzle.numToXY[number].y, opposite(orientation)),
+				opposite(orientation),
+				secondaryFocusColor
+			);
 
 			var cellCoords = puzzle.numToXY[number];
 			
@@ -591,7 +630,7 @@ function initXWord(xmlString) {
 
 		
 		// space bar
-		else if(e.keyCode === 32) {
+		if(e.keyCode === 32) {
 			toggleOrientation(user);
 			redrawPuzzle = true;
 		}
@@ -688,7 +727,7 @@ var xwordUrl = xwordBaseUrl + xwordUrlSuffix;
 
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
-	if (this.readyState == 4 && this.status == 200) {
+	if (this.readyState === 4 && this.status === 200) {
 		initXWord(this.responseText);
 	}
 }
