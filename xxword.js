@@ -402,7 +402,8 @@ function initXWord(xmlString) {
 	var puzzle = {
 		solved: false,
 		highlightedDown: -1,
-		highlightedAcross: -1
+		highlightedAcross: -1,
+		numToCell: {}
 	};
 	
 	var canvas = document.getElementById("xword");
@@ -481,6 +482,7 @@ function initXWord(xmlString) {
 			var number;
 			if(cellXml.hasAttribute("number")) {
 				number = parseInt(cellXml.getAttribute("number"));
+				puzzle.numToCell[number] = { x: j, y: i };
 			}
 			else {
 				number = -1;
@@ -545,9 +547,16 @@ function initXWord(xmlString) {
 			var orientation = id.slice(index);
 
 			var user = puzzle.users[0];
-
-			// var rgb = hslToRgb(user.color);
+			
 			highlightClue(puzzle, number, orientation, hslString(user));
+
+			var cellCoords = puzzle.numToCell[number];
+			
+			user.focus.x = cellCoords.x;
+			user.focus.y = cellCoords.y;
+			user.orientation = orientation;
+
+			drawPuzzle(puzzle);
 		};
 		
 		var acrossList = document.getElementById("acrossList");
