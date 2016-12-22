@@ -8,6 +8,46 @@ window.mobileAndTabletcheck = function() {
   return check;
 };
 
+function hslString(user) {
+	return "hsl(" + user.color.h + ", " + user.color.s + "%, " + user.color.l + "%)";
+}
+
+/**
+ * Converts an HSL color value to RGB. Conversion formula
+ * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+ * Assumes h, s, and l are contained in the set [0, 1] and
+ * returns r, g, and b in the set [0, 255].
+ *
+ * @param   {number}  h       The hue
+ * @param   {number}  s       The saturation
+ * @param   {number}  l       The lightness
+ * @return  {Array}           The RGB representation
+ */
+function hslToRgb(h, s, l){
+    var r, g, b;
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        var hue2rgb = function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
 function padNum(num, desiredLength) {
 	var result = "";
 	var numStr = num.toString();
@@ -297,7 +337,7 @@ function drawPuzzle(puzzle) {
 	// Draw user highlights
 	for(var i = 0; i < puzzle.users.length; i++) {
 		var user = puzzle.users[i];
-		var color = "hsl(" + user.color.h + ", " + user.color.s + "%, " + user.color.l + "%)";
+		var color = hslString(user);
 
 		// note: color's l should be somewhere in the neighborhood of 50.
 		// lighter colors have fixed l -- so make sure the base color doesn't
@@ -329,9 +369,40 @@ function isCorrect(puzzle) {
 	return true;
 }
 
+function highlightClue(puzzle, number, orientation, color) {
+	if(orientation !== "across" && orientation !== "down") {
+		return;
+	}
+
+	var clue = document.getElementById(number + orientation);
+
+	if(clue == null) {
+		return;
+	}
+	
+
+	var alreadyHighlighted;
+	if(orientation === "across") {
+		alreadyHighlighted = document.getElementById(puzzle.highlightedAcross + "across");
+		puzzle.highlightedAcross = number;
+	}
+	else {
+		alreadyHighlighted = document.getElementById(puzzle.highlightedDown + "down");
+		puzzle.highlightedDown = number;
+	}
+	
+	if(alreadyHighlighted != null) {
+		alreadyHighlighted.style.background = "#FFFFFF";
+	}
+
+	clue.style.background = color;
+}
+
 function initXWord(xmlString) {
 	var puzzle = {
 		solved: false,
+		highlightedDown: -1,
+		highlightedAcross: -1
 	};
 	
 	var canvas = document.getElementById("xword");
@@ -465,6 +536,19 @@ function initXWord(xmlString) {
 
 		var acrossClues = acrossXml.getElementsByTagName("clue");
 		var downClues = downXml.getElementsByTagName("clue");
+
+		var clueClickListener = function(e) {
+			var id = e.target.id;
+			var index = Math.max(id.indexOf("a"), id.indexOf("d"));
+
+			var number = parseInt(id.slice(0, index));
+			var orientation = id.slice(index);
+
+			var user = puzzle.users[0];
+
+			// var rgb = hslToRgb(user.color);
+			highlightClue(puzzle, number, orientation, hslString(user));
+		};
 		
 		var acrossList = document.getElementById("acrossList");
 		for(var i = 0; i < acrossClues.length; i++) {
@@ -473,9 +557,12 @@ function initXWord(xmlString) {
 			var text = clue.textContent;
 
 			var item = document.createElement("div");
-			item.className = "clue"
+			item.id = number + "across";
+			item.className = "clue";
 			item.innerHTML = number + ". " + text;
-
+			
+			item.addEventListener("click", clueClickListener);
+			
 			acrossList.appendChild(item);
 		}
 
@@ -486,8 +573,11 @@ function initXWord(xmlString) {
 			var text = clue.textContent;
 
 			var item = document.createElement("div");
-			item.className = "clue"
+			item.id = number + "down";
+			item.className = "clue";
 			item.innerHTML = number + ". " + text;
+
+			item.addEventListener("click", clueClickListener);
 
 			downList.appendChild(item);
 		}
