@@ -353,24 +353,28 @@ function drawPuzzle(puzzle) {
 		}
 	}
 
+
 	// Draw user highlights
 	for(var i = 0; i < puzzle.users.length; i++) {
 		var user = puzzle.users[i];
-		var color = hslString(user);
+		
+		if(user.focus.x > -1 && user.focus.y > -1) {
+			var color = hslString(user);
 
-		// note: color's l should be somewhere in the neighborhood of 50.
-		// lighter colors have fixed l -- so make sure the base color doesn't
-		// have a higher l than that
-		var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 75%";
+			// note: color's l should be somewhere in the neighborhood of 50.
+			// lighter colors have fixed l -- so make sure the base color doesn't
+			// have a higher l than that
+			var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 75%";
 
-		var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
-		var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
+			var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
+			var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
 
-		drawCells(puzzle, perpendicularCells, secondaryFocusColor);		
-		drawCells(puzzle, focusedCells, colorLighter);
+			drawCells(puzzle, perpendicularCells, secondaryFocusColor);		
+			drawCells(puzzle, focusedCells, colorLighter);
 
-		// highlight focused cell
-		drawCell(puzzle, puzzle.cells[user.focus.y][user.focus.x], color);
+			// highlight focused cell
+			drawCell(puzzle, puzzle.cells[user.focus.y][user.focus.x], color);
+		}
 	}
 }
 
@@ -388,7 +392,7 @@ function isCorrect(puzzle) {
 	return true;
 }
 
-function highlightClue(puzzle, number, orientation, color) {
+function highlightClue(puzzle, number, orientation, color, autoScroll) {
 	if(orientation !== "across" && orientation !== "down") {
 		return;
 	}
@@ -398,7 +402,10 @@ function highlightClue(puzzle, number, orientation, color) {
 	if(clue == null) {
 		return;
 	}
-	
+
+	if(autoScroll == undefined) {
+		autoScroll = true;
+	}
 
 	var alreadyHighlighted;
 	if(orientation === "across") {
@@ -415,6 +422,11 @@ function highlightClue(puzzle, number, orientation, color) {
 	}
 
 	clue.style.background = color;
+
+	if(autoScroll) {
+		var list = document.getElementById(orientation + "List");
+		list.scrollTop = (clue.offsetTop - list.offsetTop) - (list.clientHeight / 2 - clue.clientHeight / 2);
+	}
 }
 
 function initXWord(xmlString) {
@@ -550,7 +562,7 @@ function initXWord(xmlString) {
 		{
 			name: "Andrew", // TODO: customizable
 			color: { h: 60, s: 100, l: 45 },
-			focus: { x: 0, y: 0 },
+			focus: { x: -1, y: -1 },
 			orientation: "across"
 		},
 	];
@@ -633,31 +645,29 @@ function initXWord(xmlString) {
 		
 		// TODO: setting option for wraparound or not
 		// arrow left
-		if(!puzzle.interfaceFocused) {
-			if(e.keyCode === 37) {
-				moveFocusLeft(puzzle, user, true);
-				redrawPuzzle = true;
-			}
-			// arrow up
-			else if(e.keyCode === 38) {
-				moveFocusUp(puzzle, user, true);
-				redrawPuzzle = true;
-			}
-			// arrow right
-			else if(e.keyCode === 39) {
-				moveFocusRight(puzzle, user, true);
-				redrawPuzzle = true;
-			}
-			// arrow down
-			else if(e.keyCode === 40) {
-				moveFocusDown(puzzle, user, true);
-				redrawPuzzle = true;
-			}
+		if(e.keyCode === 37) {
+			moveFocusLeft(puzzle, user, true);
+			redrawPuzzle = true;
+		}
+		// arrow up
+		else if(e.keyCode === 38) {
+			moveFocusUp(puzzle, user, true);
+			redrawPuzzle = true;
+		}
+		// arrow right
+		else if(e.keyCode === 39) {
+			moveFocusRight(puzzle, user, true);
+			redrawPuzzle = true;
+		}
+		// arrow down
+		else if(e.keyCode === 40) {
+			moveFocusDown(puzzle, user, true);
+			redrawPuzzle = true;
 		}
 
 		
 		// space bar
-		if(e.keyCode === 32) {
+		else if(e.keyCode === 32) {
 			toggleOrientation(user);
 			redrawPuzzle = true;
 		}
@@ -705,6 +715,20 @@ function initXWord(xmlString) {
 			drawPuzzle(puzzle);
 		}
 
+		highlightClue(
+			puzzle,
+			cellToNumber(puzzle, user.focus.x, user.focus.y, user.orientation),
+			user.orientation,
+			hslString(user)
+		);
+
+		highlightClue(
+			puzzle,
+			cellToNumber(puzzle, user.focus.x, user.focus.y, opposite(user.orientation)),
+			opposite(user.orientation),
+			secondaryFocusColor
+		);
+
 		if(!puzzle.solved && valuesChanged) {
 			if(isCorrect(puzzle)) {
 				puzzle.solved = true;
@@ -732,9 +756,23 @@ function initXWord(xmlString) {
 				user.focus.x = clickedCell.column;
 				user.focus.y = clickedCell.row;
 			}
-		}
 
-		drawPuzzle(puzzle);
+			highlightClue(
+				puzzle,
+				cellToNumber(puzzle, user.focus.x, user.focus.y, user.orientation),
+				user.orientation,
+				hslString(user)
+			);
+
+			highlightClue(
+				puzzle,
+				cellToNumber(puzzle, user.focus.x, user.focus.y, opposite(user.orientation)),
+				opposite(user.orientation),
+				secondaryFocusColor
+			);
+			
+			drawPuzzle(puzzle);
+		}
 	});
 
 	
