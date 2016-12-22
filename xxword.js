@@ -642,6 +642,10 @@ function initXWord(xmlString) {
 		var user = puzzle.users[0];
 		var redrawPuzzle = false;
 		var valuesChanged = false;
+
+		if(e.keyCode >= 37 && e.keyCode <= 40 || e.keyCode == 32) {
+			e.preventDefault(); // prevents scrolling in divs with arrow/space
+		}
 		
 		// TODO: setting option for wraparound or not
 		// arrow left
