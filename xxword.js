@@ -1,4 +1,5 @@
-var secondaryFocusColor = "#DDDDDD"
+var secondaryFocusColor = "#EEEEEE"
+var hintedBoxColor = "#FFCCCC"
 
 // TODO: build DOM differently if mobile...
 // make xword take up entire screen
@@ -282,9 +283,16 @@ function drawCellNumber(puzzle, cell) {
 function drawCellValue(puzzle, cell) {
 	if(cell.value !== "" && cell.value !== " ") {
 		puzzle.ctx.font = puzzle.valueFont;
-		puzzle.ctx.fillStyle = "rgb(0, 0, 0)";
-		puzzle.ctx.textAlign = "center";
+
+		if(puzzle.hintsOn && cell.value !== cell.solution) {
+			puzzle.ctx.fillStyle = "#FF0000";
+			cell.hinted = true;
+		}
+		else {
+			puzzle.ctx.fillStyle = "#000000";
+		}
 		
+		puzzle.ctx.textAlign = "center";
 		puzzle.ctx.fillText(cell.value, cell.canvasX + puzzle.cellDimension / 2, cell.canvasY + puzzle.cellDimension / 2 + puzzle.valueFontHeight / 2);
 	}
 }
@@ -297,6 +305,10 @@ function drawCells(puzzle, cells, color) {
 }
 
 function drawCell(puzzle, cell, color) {
+	if(color == "#FFFFFF" && cell.hinted) {
+		color = hintedBoxColor;
+	}
+	
 	puzzle.ctx.fillStyle = color;
 	puzzle.ctx.fillRect(cell.canvasX, cell.canvasY, puzzle.cellDimension, puzzle.cellDimension);
 	
@@ -348,7 +360,7 @@ function drawPuzzle(puzzle) {
 			var cell = puzzle.cells[i][j];
 			
 			if(cell.solution !== "#") {
-				drawCell(puzzle, cell, "rgb(255, 255, 255)");
+				drawCell(puzzle, cell, "#FFFFFF");
 			}
 		}
 	}
@@ -435,7 +447,8 @@ function initXWord(xmlString) {
 		highlightedDown: -1,
 		highlightedAcross: -1,
 		numToXY: {},
-		interfaceFocused: false
+		interfaceFocused: false,
+		hintsOn: false
 	};
 	
 	var canvas = document.getElementById("xword");
@@ -537,6 +550,7 @@ function initXWord(xmlString) {
 				number: number,
 				value: "",   // user-entered value
 				circled: circled,
+				hinted: false
 			};
 		}
 	}
@@ -649,6 +663,10 @@ function initXWord(xmlString) {
 		var redrawPuzzle = false;
 		var valuesChanged = false;
 
+		if(user.focus.x == -1 || user.focus.y == -1) {
+			return;
+		}
+
 		if(e.keyCode >= 37 && e.keyCode <= 40 || e.keyCode == 32 || e.keyCode == 8) {
 			e.preventDefault(); // prevents scrolling in divs with arrow/space
 		}
@@ -751,6 +769,14 @@ function initXWord(xmlString) {
 		}
 	});
 
+	// add click listener to hints slider
+	var hints = document.getElementById("hintToggle");
+	hints.addEventListener("click", function() {
+		puzzle.hintsOn = !puzzle.hintsOn;
+		drawPuzzle(puzzle);
+	});
+	
+	item.addEventListener("click", clueClickListener);
 	canvas.addEventListener("mousedown", function(e) {
 		puzzle.interfaceFocused = false;
 		
