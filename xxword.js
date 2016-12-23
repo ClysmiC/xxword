@@ -1,5 +1,5 @@
-var secondaryFocusColor = "#EEEEEE"
-var hintedBoxColor = "#FFCCCC"
+var secondaryFocusColor = "#CCCCCC"
+var hintedBoxColor = "#FFD4D4"
 
 // TODO: build DOM differently if mobile...
 // make xword take up entire screen
@@ -305,7 +305,9 @@ function drawCells(puzzle, cells, color) {
 }
 
 function drawCell(puzzle, cell, color) {
-	if(color == "#FFFFFF" && cell.hinted) {
+	if(color == "#FFFFFF" &&
+	   (cell.hinted ||
+		(puzzle.hintsOn && cell.value !== "" && cell.value !== cell.solution))) {
 		color = hintedBoxColor;
 	}
 	
@@ -829,6 +831,16 @@ var currentDay = currentDate.getDate();
 var xwordUrlSuffix = "la" + (currentYear - 2000) + padNum(currentMonth, 2) + padNum(currentDay, 2) + ".xml";
 
 var xwordUrl = xwordBaseUrl + xwordUrlSuffix;
+
+// update dev shortcut link
+{
+	var link = document.getElementById("devShortcut");
+
+	if(link != null) {
+		link.href = xwordUrl;
+	}
+}
+
 
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
