@@ -472,13 +472,19 @@ function initXWord(xmlString) {
 	iface.style.width = Math.max((window.innerWidth - ifaceLeft - 20), 300) + "px";
 	iface.style.height = (window.innerHeight - ifaceTop - 20) + "px";
 
-	// black rect to fill puzzle area
-	ctx.fillStyle = "rgb(0, 0, 0)";
-	ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
-
 	// Set up xml parsing
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(xmlString, "text/xml");
+
+	puzzle.title = xml.getElementsByTagName("title")[0].textContent;
+	
+	// Draw title
+	{
+		let fontSize = 24;
+		ctx.font = fontSize + "px sans-serif";
+		ctx.textAlign = "center";
+		ctx.fillText(puzzle.title, puzzle.x + puzzle.dimension / 2, puzzle.y / 2 + fontSize / 2);
+	}
 
 	var gridXml = xml.getElementsByTagName("grid")[0]
 	var gridRows = parseInt(gridXml.getAttribute("height"));
@@ -736,7 +742,11 @@ function initXWord(xmlString) {
 		if(!puzzle.solved && valuesChanged) {
 			if(isCorrect(puzzle)) {
 				puzzle.solved = true;
-				alert("You have completed the puzzle!");
+
+				// timeout to allow last letter to be drawn in
+				setTimeout(function() {
+					alert("You have completed the puzzle!");
+				}, 50);
 			}
 		}
 	});
