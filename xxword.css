@@ -3,6 +3,7 @@
 	position: absolute;
 	margin: 0px;
 	padding: 0px;
+	z-index: -1;
 }
 
 #interface {
@@ -64,11 +65,26 @@
 	width: 12%;
 }
 
-#colorPicker {
-	width: 32px;
-	height: 32px;
+#colorPickerButton {
+	width: 28px;
+	height: 28px;
 	border-radius: 24px;
-	background: blue;
+	border: 2px solid black;
+	margin: 0 auto;
+	cursor: pointer;
+}
+
+#colorPicker {
+	visibility: hidden;
+}
+
+.colorSample {
+	z-index: 1;
+	display: inline-block;
+	width: 28px;
+	height: 28px;
+	border-radius: 24px;
+	border: 2px solid black;
 	margin: 0 auto;
 	cursor: pointer;
 }

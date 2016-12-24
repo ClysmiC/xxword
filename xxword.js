@@ -1,5 +1,16 @@
 var secondaryFocusColor = "#CCCCCC"
-var hintedBoxColor = "#FFD4D4"
+var hintedBoxColor = "#FFC3C3"
+
+var userColors = [
+	"#FFDC00",  // yellow
+	"#0074D9",  // blue
+	"#2ECC40",  // green
+	"#FF851B",  // orange
+	"#F012BE",  // fuchsia
+	"#795548",  // brown
+	"#7FDBFF",  // aqua
+	"#B10DC9",  // purple
+];
 
 // TODO: build DOM differently if mobile...
 // make xword take up entire screen
@@ -11,9 +22,81 @@ window.mobileAndTabletcheck = function() {
 	return check;
 };
 
-function hslString(user) {
-	return "hsl(" + user.color.h + ", " + user.color.s + "%, " + user.color.l + "%)";
+
+//////////////////////////////////////////////////
+////////// COLOR CONVERSION
+////////// https://gist.github.com/mjackson/5311256
+//////////////////////////////////////////////////
+
+function hslToRgb(h, s, l) {
+	var r, g, b;
+
+	if (s == 0) {
+		r = g = b = l; // achromatic
+	} else {
+		function hue2rgb(p, q, t) {
+			if (t < 0) t += 1;
+			if (t > 1) t -= 1;
+			if (t < 1/6) return p + (q - p) * 6 * t;
+			if (t < 1/2) return q;
+			if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+			return p;
+		}
+
+		var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		var p = 2 * l - q;
+
+		r = hue2rgb(p, q, h + 1/3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1/3);
+	}
+
+	return [ r * 255, g * 255, b * 255 ];
 }
+
+function rgbToHsl(r, g, b) {
+  r /= 255, g /= 255, b /= 255;
+
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if (max == min) {
+    h = s = 0; // achromatic
+  } else {
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+
+    h /= 6;
+  }
+
+  return [ h, s, l ];
+}
+
+function rgbStringToHsl(rgbString) {
+	var r = parseInt(rgbString.slice(1, 3), 16);
+	var g = parseInt(rgbString.slice(3, 5), 16);
+	var b = parseInt(rgbString.slice(5, 7), 16);
+
+	return rgbToHsl(r, g, b);
+}
+
+
+function rgbToLighterHslString(rgbString) {
+	var colorHSL = rgbStringToHsl(rgbString);
+	var colorLighter = "hsl(" + (colorHSL[0] * 360) + ", " + (colorHSL[1] * 100) + "%, " + (colorHSL[2] + 1) * 100 / 2 + "%";
+	return colorLighter;
+}
+
+//////////////////////////////////////////////////
+////////// END COLOR CONVERSION
+//////////////////////////////////////////////////
+
 
 function padNum(num, desiredLength) {
 	var result = "";
@@ -352,6 +435,27 @@ function cellAtCanvasPos(puzzle, x, y) {
 	return null;
 }
 
+function highlightCluesForUser(puzzle, user) {
+	var number = cellToNumber(puzzle, user.focus.x, user.focus.y, user.orientation);
+	highlightClue(
+		puzzle,
+		number,
+		user.orientation,
+		rgbToLighterHslString(user.color)
+	);
+	
+	highlightClue(
+		puzzle,
+		cellToNumber(
+			puzzle,
+			user.focus.x,
+			user.focus.y,
+			opposite(user.orientation)),
+		opposite(user.orientation),
+		secondaryFocusColor
+	);
+}
+
 function drawPuzzle(puzzle) {
 	puzzle.ctx.fillStyle = "#000000";
 	puzzle.ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
@@ -373,12 +477,9 @@ function drawPuzzle(puzzle) {
 		var user = puzzle.users[i];
 		
 		if(user.focus.x > -1 && user.focus.y > -1) {
-			var color = hslString(user);
+			var color = user.color;
 
-			// note: color's l should be somewhere in the neighborhood of 50.
-			// lighter colors have fixed l -- so make sure the base color doesn't
-			// have a higher l than that
-			var colorLighter = "hsl(" + user.color.h + ", " + user.color.s + "%, 75%";
+			var colorLighter = rgbToLighterHslString(color);
 
 			var focusedCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, user.orientation);
 			var perpendicularCells = getFocusedCells(puzzle, user.focus.x, user.focus.y, opposite(user.orientation));
@@ -594,7 +695,7 @@ function initXWord(xmlString) {
 	puzzle.users = [
 		{
 			name: "Andrew", // TODO: customizable
-			color: { h: 60, s: 100, l: 45 },
+			color: userColors[0],
 			focus: { x: -1, y: -1 },
 			orientation: "across"
 		},
@@ -614,25 +715,18 @@ function initXWord(xmlString) {
 			puzzle.interfaceFocused = true;
 			
 			var index = Math.max(id.indexOf("a"), id.indexOf("d"));
-
-			var number = parseInt(id.slice(0, index));
+			var number = id.slice(0, index);
 			var orientation = id.slice(index);
 
 			var user = puzzle.users[0];
-			
-			highlightClue(puzzle, number, orientation, hslString(user));
-			highlightClue(
-				puzzle,
-				cellToNumber(puzzle, puzzle.numToXY[number].x, puzzle.numToXY[number].y, opposite(orientation)),
-				opposite(orientation),
-				secondaryFocusColor
-			);
-
 			var cellCoords = puzzle.numToXY[number];
 			
 			user.focus.x = cellCoords.x;
 			user.focus.y = cellCoords.y;
 			user.orientation = orientation;
+
+			highlightCluesForUser(puzzle, user);
+
 
 			drawPuzzle(puzzle);
 		};
@@ -756,19 +850,7 @@ function initXWord(xmlString) {
 			drawPuzzle(puzzle);
 		}
 
-		highlightClue(
-			puzzle,
-			cellToNumber(puzzle, user.focus.x, user.focus.y, user.orientation),
-			user.orientation,
-			hslString(user)
-		);
-
-		highlightClue(
-			puzzle,
-			cellToNumber(puzzle, user.focus.x, user.focus.y, opposite(user.orientation)),
-			opposite(user.orientation),
-			secondaryFocusColor
-		);
+		highlightCluesForUser(puzzle, user);
 	});
 
 	// add click listener to hints slider
@@ -778,7 +860,6 @@ function initXWord(xmlString) {
 		drawPuzzle(puzzle);
 	});
 	
-	// item.addEventListener("click", clueClickListener);
 	canvas.addEventListener("mousedown", function(e) {
 		puzzle.interfaceFocused = false;
 		
@@ -799,19 +880,7 @@ function initXWord(xmlString) {
 				user.focus.y = clickedCell.row;
 			}
 
-			highlightClue(
-				puzzle,
-				cellToNumber(puzzle, user.focus.x, user.focus.y, user.orientation),
-				user.orientation,
-				hslString(user)
-			);
-
-			highlightClue(
-				puzzle,
-				cellToNumber(puzzle, user.focus.x, user.focus.y, opposite(user.orientation)),
-				opposite(user.orientation),
-				secondaryFocusColor
-			);
+			highlightCluesForUser(puzzle, user, number);
 			
 			drawPuzzle(puzzle);
 		}
@@ -937,7 +1006,68 @@ function initXWord(xmlString) {
 
 		drawPuzzle(puzzle);
 	});
-	
+
+
+	var colorPickerButton = document.getElementById("colorPickerButton");
+	colorPickerButton.style.background = puzzle.users[0].color;
+
+	var colorSamples = document.getElementsByClassName("colorSample");
+	for (var i = 0; i < Math.min(colorSamples.length, userColors.length); i++) {
+		var sampleDiv = colorSamples[i];
+		sampleDiv.style.background = userColors[i];
+
+		sampleDiv.addEventListener("click", function(e) {
+			var i = parseInt(this.getAttribute("data-index"));
+			var color = userColors[i];
+			puzzle.users[0].color = color;
+			colorPickerButton.style.background = color;
+
+			highlightCluesForUser(puzzle, puzzle.users[0]);
+			drawPuzzle(puzzle);
+		});
+	}
+	colorPickerButton.addEventListener("click", function(e) {
+		var picker = document.getElementById("colorPicker");
+
+		if(picker.style.visibility === "") {
+			picker.style.visibility = "hidden";
+		}
+		
+		if(picker.style.visibility === "hidden") {
+			var buttonRect = this.getBoundingClientRect();
+			var pickerRect = picker.getBoundingClientRect();
+			
+			picker.style.left = buttonRect.left - pickerRect.with + "px";
+			picker.style.top = buttonRect.top + buttonRect.height / 2 + "px";
+			picker.style.visibility = "visible";
+		}
+		else {
+			picker.style.visibility = "hidden";
+		}
+
+		// invisible when mouse leaves
+		// setTimeout(function() {
+		// 	var t = setInterval(function() {
+		// 		var picker = document.getElementsByClassName("revealOption");
+		// 		var keepAlive = false;
+
+		// 		if(document.getElementById("revealPicker").style.visibility !== "hidden") {
+		// 			for(var i = 0; i < picker.length; i++) {
+		// 				var option = picker[i];
+		// 				if(option.getAttribute("data-mouseIsOver") === "true") {
+		// 					keepAlive = true;
+		// 					break;
+		// 				}
+		// 			}
+		// 		}
+
+		// 		if(!keepAlive) {
+		// 			clearInterval(t);
+		// 			document.getElementById("revealPicker").style.visibility = "hidden";
+		// 		}
+		// 	}, 100);
+		// }, 1000);
+	});
 	
 	drawPuzzle(puzzle);
 }
