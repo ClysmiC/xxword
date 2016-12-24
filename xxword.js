@@ -303,6 +303,10 @@ function retreatFocus(puzzle, user) {
 
 function cellToNumber(puzzle, x, y, orientation) {
 	var cells = puzzle.cells;
+
+	if(x == -1 || y == -1) {
+		return -1;
+	}
 	
 	if(orientation !== "down" && orientation !== "across") {
 		return -1;
@@ -997,7 +1001,7 @@ function initXWord(xmlString) {
 			for(var j = 0; j < puzzle.gridDimension; j++) {
 				var cell = puzzle.cells[j][i];
 
-				if(cell.solution !== "#") {
+				if(cell.solution !== "#" && cell.value !== cell.solution) {
 					cell.value = cell.solution;
 					cell.hinted = true;
 				}
