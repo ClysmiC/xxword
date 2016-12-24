@@ -390,6 +390,17 @@ function drawPuzzle(puzzle) {
 			drawCell(puzzle, puzzle.cells[user.focus.y][user.focus.x], color);
 		}
 	}
+
+	if(!puzzle.solved) {
+		if(isCorrect(puzzle)) {
+			puzzle.solved = true;
+
+			// timeout to allow last letter to be drawn in
+			setTimeout(function() {
+				alert("You have completed the puzzle!");
+			}, 50);
+		}
+	}
 }
 
 function isCorrect(puzzle) {
@@ -495,7 +506,7 @@ function initXWord(xmlString) {
 	
 	// Draw title
 	{
-		let fontSize = 24;
+		var fontSize = 24;
 		ctx.font = fontSize + "px sans-serif";
 		ctx.textAlign = "center";
 		ctx.fillText(puzzle.title, puzzle.x + puzzle.dimension / 2, puzzle.y / 2 + fontSize / 2);
@@ -758,17 +769,6 @@ function initXWord(xmlString) {
 			opposite(user.orientation),
 			secondaryFocusColor
 		);
-
-		if(!puzzle.solved && valuesChanged) {
-			if(isCorrect(puzzle)) {
-				puzzle.solved = true;
-
-				// timeout to allow last letter to be drawn in
-				setTimeout(function() {
-					alert("You have completed the puzzle!");
-				}, 50);
-			}
-		}
 	});
 
 	// add click listener to hints slider
@@ -778,7 +778,7 @@ function initXWord(xmlString) {
 		drawPuzzle(puzzle);
 	});
 	
-	item.addEventListener("click", clueClickListener);
+	// item.addEventListener("click", clueClickListener);
 	canvas.addEventListener("mousedown", function(e) {
 		puzzle.interfaceFocused = false;
 		
@@ -817,6 +817,91 @@ function initXWord(xmlString) {
 		}
 	});
 
+	var revealButton = document.getElementById("reveal");
+	reveal.addEventListener("click", function(e) {
+		var options = document.getElementById("revealOptions");
+
+		if(options.style.visibility === "") {
+			options.style.visibility = "hidden";
+		}
+		
+		if(options.style.visibility === "hidden") {
+			var buttonRect = this.getBoundingClientRect();
+			
+			options.style.left = buttonRect.left - 9 + "px";
+			options.style.top = buttonRect.top + buttonRect.height + 12 + "px";
+			options.style.visibility = "visible";
+		}
+		else {
+			options.style.visibility = "hidden";
+		}
+	});
+
+	var revealLetter = document.getElementById("revealLetter");
+	revealLetter.addEventListener("click", function(e) {
+		document.getElementById("revealOptions").style.visibility = "hidden";
+		
+		if(puzzle.solved) { return; }
+		
+		var user = puzzle.users[0];
+		
+		if(user.focus.x !== -1 && user.focus.y !== -1) {
+			var cell = puzzle.cells[user.focus.y][user.focus.x];
+			cell.value = cell.solution;
+			cell.hinted = true;
+
+			drawPuzzle(puzzle);
+		}
+
+	});
+
+	var revealWord = document.getElementById("revealWord");
+	revealWord.addEventListener("click", function(e) {
+		document.getElementById("revealOptions").style.visibility = "hidden";
+		
+		if(puzzle.solved) { return; }
+		
+		var user = puzzle.users[0];
+		
+		if(user.focus.x !== -1 && user.focus.y !== -1) {
+			var cells = getFocusedCells(
+				puzzle,
+				user.focus.x,
+				user.focus.y,
+				user.orientation
+			);
+
+			for(var i = 0; i < cells.length; i++) {
+				var cell = cells[i];
+				
+				cell.value = cell.solution;
+				cell.hinted = true;
+			}
+
+			drawPuzzle(puzzle);
+		}
+	});
+
+	var revealPuzzle = document.getElementById("revealPuzzle");
+	revealPuzzle.addEventListener("click", function(e) {
+		document.getElementById("revealOptions").style.visibility = "hidden";
+
+		if(puzzle.solved) { return; }
+		
+		for(var i = 0; i < puzzle.gridDimension; i++) {
+			for(var j = 0; j < puzzle.gridDimension; j++) {
+				var cell = puzzle.cells[j][i];
+
+				if(cell.solution !== "#") {
+					cell.value = cell.solution;
+					cell.hinted = true;
+				}
+			}
+		}
+
+		drawPuzzle(puzzle);
+	});
+	
 	
 	drawPuzzle(puzzle);
 }
