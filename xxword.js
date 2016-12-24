@@ -835,7 +835,44 @@ function initXWord(xmlString) {
 		else {
 			options.style.visibility = "hidden";
 		}
+
+		// invisible when mouse leaves
+		setTimeout(function() {
+			var t = setInterval(function() {
+				var options = document.getElementsByClassName("revealOption");
+				var keepAlive = false;
+
+				if(document.getElementById("revealOptions").style.visibility !== "hidden") {
+					for(var i = 0; i < options.length; i++) {
+						var option = options[i];
+						if(option.getAttribute("data-mouseIsOver") === "true") {
+							keepAlive = true;
+							break;
+						}
+					}
+				}
+
+				if(!keepAlive) {
+					clearInterval(t);
+					document.getElementById("revealOptions").style.visibility = "hidden";
+				}
+			}, 100);
+		}, 1000);
 	});
+
+	// hack-- check the background color of the options
+	// if none of the options have the "selected" background
+	// color, then the mouse isn't over any of them!
+	var options = document.getElementsByClassName("revealOption");
+	for(var i = 0; i < options.length; i++) {
+		var option = options[i];
+		option.addEventListener("mouseover", function(e) {
+			this.setAttribute("data-mouseIsOver", "true");
+		});
+		option.addEventListener("mouseout", function(e) {
+			this.setAttribute("data-mouseIsOver", "false");
+		});
+	}
 
 	var revealLetter = document.getElementById("revealLetter");
 	revealLetter.addEventListener("click", function(e) {
@@ -852,7 +889,6 @@ function initXWord(xmlString) {
 
 			drawPuzzle(puzzle);
 		}
-
 	});
 
 	var revealWord = document.getElementById("revealWord");
