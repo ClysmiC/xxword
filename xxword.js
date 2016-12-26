@@ -1,3 +1,4 @@
+
 var secondaryFocusColor = "#CCCCCC"
 var hintedBoxColor = "#FFC3C3"
 
@@ -982,9 +983,10 @@ function initXWord(xmlString) {
 
 			for(var i = 0; i < cells.length; i++) {
 				var cell = cells[i];
-				
-				cell.value = cell.solution;
-				cell.hinted = true;
+				if(cell.value !== cell.solution) {
+					cell.value = cell.solution;
+					cell.hinted = true;
+				}
 			}
 
 			drawPuzzle(puzzle);
