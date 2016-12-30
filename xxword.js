@@ -908,6 +908,7 @@ function initXWord(xmlString) {
 		}
 		else {
 			options.style.visibility = "hidden";
+			return;
 		}
 
 		// invisible when mouse leaves
@@ -931,7 +932,7 @@ function initXWord(xmlString) {
 					document.getElementById("revealOptions").style.visibility = "hidden";
 				}
 			}, 100);
-		}, 1000);
+		}, 2000);
 	});
 
 	// hack-- check the background color of the options
@@ -1043,36 +1044,66 @@ function initXWord(xmlString) {
 			var buttonRect = this.getBoundingClientRect();
 			var pickerRect = picker.getBoundingClientRect();
 			
-			picker.style.left = buttonRect.left - pickerRect.with + "px";
-			picker.style.top = buttonRect.top + buttonRect.height / 2 + "px";
+			picker.style.left = buttonRect.left - pickerRect.width - 8 + "px";
+			picker.style.top = buttonRect.top + "px";
 			picker.style.visibility = "visible";
 		}
 		else {
 			picker.style.visibility = "hidden";
+			return;
 		}
 
 		// invisible when mouse leaves
-		// setTimeout(function() {
-		// 	var t = setInterval(function() {
-		// 		var picker = document.getElementsByClassName("revealOption");
-		// 		var keepAlive = false;
+		setTimeout(function() {
+			var t = setInterval(function() {
+				var samples = document.getElementsByClassName("colorSample");
+				var keepAlive = false;
 
-		// 		if(document.getElementById("revealPicker").style.visibility !== "hidden") {
-		// 			for(var i = 0; i < picker.length; i++) {
-		// 				var option = picker[i];
-		// 				if(option.getAttribute("data-mouseIsOver") === "true") {
-		// 					keepAlive = true;
-		// 					break;
-		// 				}
-		// 			}
-		// 		}
+				if(document.getElementById("colorPicker").style.visibility !== "hidden") {
+					for(var i = 0; i < samples.length + 1; i++) {
+						var sample;
+						if(i === samples.length) {
+							sample = document.getElementById("colorPicker");
+						}
+						else {
+							sample = samples[i];
+						}
+						
+						if(sample.getAttribute("data-mouseIsOver") === "true") {
+							keepAlive = true;
+							break;
+						}
+					}
+				}
 
-		// 		if(!keepAlive) {
-		// 			clearInterval(t);
-		// 			document.getElementById("revealPicker").style.visibility = "hidden";
-		// 		}
-		// 	}, 100);
-		// }, 1000);
+				if(!keepAlive) {
+					clearInterval(t);
+					document.getElementById("colorPicker").style.visibility = "hidden";
+				}
+			}, 100);
+		}, 2000);
+	});
+
+	// hack-- check the background color of the options
+	// if none of the options have the "selected" background
+	// color, then the mouse isn't over any of them!
+	var samples = document.getElementsByClassName("colorSample");
+	for(var i = 0; i < samples.length; i++) {
+		var sample = samples[i];
+		sample.addEventListener("mouseover", function(e) {
+			this.setAttribute("data-mouseIsOver", "true");
+		});
+		sample.addEventListener("mouseout", function(e) {
+			this.setAttribute("data-mouseIsOver", "false");
+		});
+	}
+
+	var cp = document.getElementById("colorPicker");
+	cp.addEventListener("mouseover", function(e) {
+		this.setAttribute("data-mouseIsOver", "true");
+	});
+	cp.addEventListener("mouseout", function(e) {
+		this.setAttribute("data-mouseIsOver", "false");
 	});
 	
 	drawPuzzle(puzzle);
