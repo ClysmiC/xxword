@@ -1109,16 +1109,18 @@ function initXWord(xmlString) {
 	drawPuzzle(puzzle);
 }
 
-var xwordBaseUrl = "http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/";
 var currentDate = new Date();
 var currentYear = currentDate.getFullYear();
 var currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
 var currentDay = currentDate.getDate();
 
 // This will break beyond year 2100... but so will latimes' url format!
-var xwordUrlSuffix = "la" + (currentYear - 2000) + padNum(currentMonth, 2) + padNum(currentDay, 2) + ".xml";
+var xwordUrlSuffix =
+	(currentYear - 2000) + "" +
+	padNum(currentMonth, 2) + "" +
+	padNum(currentDay, 2);
 
-var xwordUrl = xwordBaseUrl + xwordUrlSuffix;
+var xwordUrl = "http://localhost:5000/la" + xwordUrlSuffix;
 
 // update dev shortcut link
 {
