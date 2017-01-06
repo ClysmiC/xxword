@@ -1,4 +1,3 @@
-
 var secondaryFocusColor = "#CCCCCC"
 var hintedBoxColor = "#FFC3C3"
 
@@ -166,7 +165,7 @@ function getFocusedCells(puzzle, x, y, orientation) {
 	}
 
 	// Iterate forwards and add each cell to our list
-	while(x < puzzle.gridDimension && y < puzzle.gridDimension && cells[y][x].solution !== "#") {
+	while(x < puzzle.dimension && y < puzzle.dimension && cells[y][x].solution !== "#") {
 		result.push(cells[y][x]);
 		
 		x += deltaX;
@@ -183,8 +182,8 @@ function moveFocusRight(puzzle, user, wrap) {
 		wrap = false;
 	}
 
-	for(var i = user.focus.x + 1; wrap || i < puzzle.gridDimension; i++) {
-		if(wrap && i === puzzle.gridDimension) {
+	for(var i = user.focus.x + 1; wrap || i < puzzle.dimension; i++) {
+		if(wrap && i === puzzle.dimension) {
 			i = 0;
 		}
 		
@@ -204,7 +203,7 @@ function moveFocusLeft(puzzle, user, wrap) {
 	
 	for(var i = user.focus.x - 1; wrap || i >= 0; i--) {
 		if(wrap && i === -1) {
-			i = puzzle.gridDimension - 1;
+			i = puzzle.dimension - 1;
 		}
 		
 		if(cells[user.focus.y][i].solution !== "#") {
@@ -223,7 +222,7 @@ function moveFocusUp(puzzle, user, wrap) {
 	
 	for(var i = user.focus.y - 1; wrap || i >= 0; i--) {
 		if(wrap && i === -1) {
-			i = puzzle.gridDimension - 1;
+			i = puzzle.dimension - 1;
 		}
 		
 		if(cells[i][user.focus.x].solution !== "#") {
@@ -240,8 +239,8 @@ function moveFocusDown(puzzle, user, wrap) {
 		wrap = false;
 	}
 	
-	for(var i = user.focus.y + 1; wrap || i < puzzle.gridDimension; i++) {
-		if(wrap && i === puzzle.gridDimension) {
+	for(var i = user.focus.y + 1; wrap || i < puzzle.dimension; i++) {
+		if(wrap && i === puzzle.dimension) {
 			i = 0;
 		}
 		
@@ -255,7 +254,7 @@ function moveFocusDown(puzzle, user, wrap) {
 function moveFocusRightSoft(puzzle, user) {
 	var cells = puzzle.cells;
 
-	if(user.focus.x < puzzle.gridDimension - 1 && cells[user.focus.y][user.focus.x + 1].solution !== "#") {
+	if(user.focus.x < puzzle.dimension - 1 && cells[user.focus.y][user.focus.x + 1].solution !== "#") {
 		user.focus.x += 1;
 	}
 }
@@ -279,7 +278,7 @@ function moveFocusUpSoft(puzzle, user) {
 function moveFocusDownSoft(puzzle, user) {
 	var cells = puzzle.cells;
 
-	if(user.focus.y < puzzle.gridDimension - 1 && cells[user.focus.y + 1][user.focus.x].solution !== "#") {
+	if(user.focus.y < puzzle.dimension - 1 && cells[user.focus.y + 1][user.focus.x].solution !== "#") {
 		user.focus.y += 1;
 	}
 }
@@ -433,7 +432,7 @@ function cellAtCanvasPos(puzzle, x, y) {
 	var xIndex = Math.floor((x - (puzzle.x + puzzle.cellMargin / 2)) / (puzzle.cellDimension + puzzle.cellMargin));
 	var yIndex = Math.floor((y - (puzzle.y + puzzle.cellMargin / 2)) / (puzzle.cellDimension + puzzle.cellMargin));
 
-	if(xIndex >= 0 && xIndex < puzzle.gridDimension && yIndex >= 0 && yIndex < puzzle.gridDimension) {
+	if(xIndex >= 0 && xIndex < puzzle.dimension && yIndex >= 0 && yIndex < puzzle.dimension) {
 		return cells[yIndex][xIndex];
 	}
 
@@ -463,7 +462,7 @@ function highlightCluesForUser(puzzle, user) {
 
 function drawPuzzle(puzzle) {
 	puzzle.ctx.fillStyle = "#000000";
-	puzzle.ctx.fillRect(puzzle.x, puzzle.y, puzzle.dimension, puzzle.dimension);
+	puzzle.ctx.fillRect(puzzle.x, puzzle.y, puzzle.drawDimension, puzzle.drawDimension);
 	
 	// Draw base puzzle
 	for(var i = 0; i < puzzle.cells.length; i++) {
@@ -560,15 +559,14 @@ function highlightClue(puzzle, number, orientation, color, autoScroll) {
 	}
 }
 
-function initXWord(xmlString) {
-	var puzzle = {
-		solved: false,
-		highlightedDown: -1,
-		highlightedAcross: -1,
-		numToXY: {},
-		interfaceFocused: false,
-		hintsOn: false
-	};
+function initXWord(json) {
+	var puzzle = JSON.parse(json);
+	puzzle.solved = false;
+	puzzle.highlightedDown = -1;
+	puzzle.highlightedAcross = -1;
+	puzzle.numToXY = {};
+	puzzle.interfaceFocused = false;
+	puzzle.hintsOn = false;
 	
 	var canvas = document.getElementById("xword");
 	var iface = document.getElementById("interface");
@@ -591,7 +589,7 @@ function initXWord(xmlString) {
 	canvas.style.top = ((canvasContainingHeight - ctx.canvas.height) / 2) + "px";
 
 	var puzzlePadding = 75;
-	puzzle.dimension = ctx.canvas.width - 2 * puzzlePadding;
+	puzzle.drawDimension = ctx.canvas.width - 2 * puzzlePadding;
 	puzzle.x = puzzlePadding;
 	puzzle.y = puzzlePadding;
 
@@ -604,86 +602,20 @@ function initXWord(xmlString) {
 	iface.style.width = Math.max((window.innerWidth - ifaceLeft - 20), 300) + "px";
 	iface.style.height = (window.innerHeight - ifaceTop - 20) + "px";
 
-	// Set up xml parsing
-	var parser = new DOMParser();
-	var xml = parser.parseFromString(xmlString, "text/xml");
-
-	puzzle.title = xml.getElementsByTagName("title")[0].textContent;
-	
-	// Draw title
-	{
-		var fontSize = 24;
-		ctx.font = fontSize + "px sans-serif";
-		ctx.textAlign = "center";
-		ctx.fillText(puzzle.title, puzzle.x + puzzle.dimension / 2, puzzle.y / 2 + fontSize / 2);
-	}
-
-	var gridXml = xml.getElementsByTagName("grid")[0]
-	var gridRows = parseInt(gridXml.getAttribute("height"));
-	var gridCols = parseInt(gridXml.getAttribute("width"));
-	
-	if(gridRows !== gridCols) {
-		alert("ERROR: Retrieved invalid crossword (rows not equal to columns)\nRows: " + gridRows + "\nCols: " + gridCols);
-		return;
-	}
-
-	puzzle.gridDimension = gridRows;
-
-	// cache xml element for each cell in 'cells'
-	// cells is accessed via cells[row][column]
-	puzzle.cells = new Array(puzzle.gridDimension);
-	for(var i = 0; i < puzzle.cells.length; i++) {
-		puzzle.cells[i] = new Array(puzzle.gridDimension);
-	}
-
-	for(var i = 0; i < puzzle.gridDimension; i++) {
-		for(var j = 0; j < puzzle.gridDimension; j++) {
-			// the xml iterates in column major order, but cells is in row major order,
-			//which is why j and i may seem backwards in the math below
-			var cellXml = gridXml.children[1 + j * puzzle.gridDimension + i];
-			
-			var solution;
-			if(cellXml.hasAttribute("type") && cellXml.getAttribute("type") === "block") {
-				solution = "#";
-			}
-			else {				
-				solution = cellXml.getAttribute("solution");
-			}
-
-			var number;
-			if(cellXml.hasAttribute("number")) {
-				number = parseInt(cellXml.getAttribute("number"));
-				puzzle.numToXY[number] = { x: j, y: i };
-			}
-			else {
-				number = -1;
-			}
-
-			var circled = cellXml.hasAttribute("background-shape") && cellXml.getAttribute("background-shape") === "circle";
-			
-			
-			puzzle.cells[i][j] = {
-				row: i,
-				column: j,
-				solution: solution,
-				number: number,
-				value: "",   // user-entered value
-				circled: circled,
-				hinted: false
-			};
-		}
-	}
-
 	// Calculate x and y positions of each cell
 	puzzle.cellMargin = 2;
-	var numMargins = puzzle.gridDimension + 1;
+	var numMargins = puzzle.dimension + 1;
 	
-	puzzle.cellDimension = (puzzle.dimension - (puzzle.cellMargin * numMargins)) / puzzle.gridDimension;
+	puzzle.cellDimension = (puzzle.drawDimension - (puzzle.cellMargin * numMargins)) / puzzle.dimension;
 	
 	for(var i = 0; i < puzzle.cells.length; i++) {
 		for(var j = 0; j < puzzle.cells[0].length; j++) {
 			var cell = puzzle.cells[i][j];
 
+			if(cell.number !== -1) {
+				puzzle.numToXY[cell.number] = {x: j, y: i};
+			}
+			
 			cell.canvasX = puzzle.x + puzzle.cellMargin + j * (puzzle.cellDimension + puzzle.cellMargin);
 			cell.canvasY = puzzle.y + puzzle.cellMargin + i * (puzzle.cellDimension + puzzle.cellMargin);
 		}
@@ -706,14 +638,9 @@ function initXWord(xmlString) {
 		},
 	];
 
-	// Parse and add across and down clues to html
 	{		
-		var cluesXml = xml.getElementsByTagName("clues");
-		var acrossXml = cluesXml[0];
-		var downXml = cluesXml[1];
-
-		var acrossClues = acrossXml.getElementsByTagName("clue");
-		var downClues = downXml.getElementsByTagName("clue");
+		var acrossClues = puzzle.clues[0];
+		var downClues = puzzle.clues[1];
 
 		var clueClickListener = function(e) {
 			var id = e.target.id;
@@ -739,8 +666,8 @@ function initXWord(xmlString) {
 		var acrossList = document.getElementById("acrossList");
 		for(var i = 0; i < acrossClues.length; i++) {
 			var clue = acrossClues[i];
-			var number = clue.getAttribute("number");
-			var text = clue.textContent;
+			var number = clue.number;
+			var text = clue.text;
 
 			var item = document.createElement("div");
 			item.id = number + "across";
@@ -755,8 +682,8 @@ function initXWord(xmlString) {
 		var downList = document.getElementById("downList");
 		for(var i = 0; i < downClues.length; i++) {
 			var clue = downClues[i];
-			var number = clue.getAttribute("number");
-			var text = clue.textContent;
+			var number = clue.number;
+			var text = clue.text;
 
 			var item = document.createElement("div");
 			item.id = number + "down";
@@ -877,15 +804,15 @@ function initXWord(xmlString) {
 
 		if(clickedCell !== null && clickedCell.solution !== "#") {
 			// if already in focus, flip orientation
-			if(clickedCell.row === user.focus.y && clickedCell.column === user.focus.x) {
+			if(clickedCell.y === user.focus.y && clickedCell.x === user.focus.x) {
 				toggleOrientation(user);
 			}
 			else {
-				user.focus.x = clickedCell.column;
-				user.focus.y = clickedCell.row;
+				user.focus.x = clickedCell.x;
+				user.focus.y = clickedCell.y;
 			}
 
-			highlightCluesForUser(puzzle, user, number);
+			highlightCluesForUser(puzzle, user);
 			
 			drawPuzzle(puzzle);
 		}
@@ -1000,8 +927,8 @@ function initXWord(xmlString) {
 
 		if(puzzle.solved) { return; }
 		
-		for(var i = 0; i < puzzle.gridDimension; i++) {
-			for(var j = 0; j < puzzle.gridDimension; j++) {
+		for(var i = 0; i < puzzle.dimension; i++) {
+			for(var j = 0; j < puzzle.dimension; j++) {
 				var cell = puzzle.cells[j][i];
 
 				if(cell.solution !== "#" && cell.value !== cell.solution) {

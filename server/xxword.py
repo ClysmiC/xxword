@@ -50,8 +50,8 @@ def getXwordLaTimes(date):
             cell = cells[across * puzzle['dimension'] + down]
             
             myCell = {}
-            myCell['x'] = cell.attrib['x']
-            myCell['y'] = cell.attrib['y']
+            myCell['x'] = int(cell.attrib['x']) - 1
+            myCell['y'] = int(cell.attrib['y']) - 1
 
             if 'solution' in cell.attrib:
                 myCell['solution'] = cell.attrib['solution']
@@ -59,7 +59,7 @@ def getXwordLaTimes(date):
                 myCell['solution'] = '#'
 
             if 'number' in cell.attrib:
-                myCell['number'] = cell.attrib['number']
+                myCell['number'] = int(cell.attrib['number'])
             else:
                 myCell['number'] = -1
                 
@@ -79,11 +79,19 @@ def getXwordLaTimes(date):
 
     # Across
     for clue in clueArrays[0].findall(".//" + namespace + 'clue'):
-        puzzle['clues'][0].append(clue.text)
+        myClue = {}
+        myClue['text'] = clue.text
+        myClue['number'] = int(clue.attrib['number'])
+        
+        puzzle['clues'][0].append(myClue)
 
     # Down
     for clue in clueArrays[1].findall(".//" + namespace + 'clue'):
-        puzzle['clues'][1].append(clue.text)
+        myClue = {}
+        myClue['text'] = clue.text
+        myClue['number'] = int(clue.attrib['number'])
+        
+        puzzle['clues'][1].append(myClue)
     
     result = flask.jsonify(**puzzle)
     
