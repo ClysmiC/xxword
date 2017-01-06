@@ -701,7 +701,7 @@ function initXWord(xmlString) {
 		{
 			name: "Andrew", // TODO: customizable
 			color: userColors[0],
-			focus: { x: -1, y: -1 },
+			focus: { x: 0, y: 0 },
 			orientation: "across"
 		},
 	];
