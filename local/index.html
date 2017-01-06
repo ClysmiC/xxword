@@ -7,77 +7,105 @@
 	<link rel="stylesheet" type="text/css" href="xxword.css">
   </head>
   <body>
-	
-	<canvas id="xword" width="600" height="600">xxword requires an HTML5-compatible browser that supports the &lt;canvas&gt; tag.</canvas>
 
-	<div id="interface">
-	  <div id="topI">
+	<div id="startHere">
+	  <div id="startPuzzle" class="startColumn">
+		<div class="startHereHeader">START A PUZZLE</div>
+		<div id="startPuzzleBody" class="startHereBody">
+		  <select id="puzzleSelect">
+			<option disabled selected>Select a Puzzle</option>
+		  </select>
 
-		<div id="colorPickContainer" class="interfaceContainer">
-		  <div id="colorPickerButton"></div>
+		  <div id="startRadios">
+			<div><input type="radio" class="sgRadio" name="soloOrGroup" value="solo" checked>Solo</div>
+			<div><input type="radio" class="sgRadio" name="soloOrGroup" value="group">Group</div>
+		  </div>
+
+		  <button id="startNewPuzzleBtn">Start!</button>
 		</div>
-
-		<div id="revealContainer" class="interfaceContainer">
-		  <img id="reveal" src="q.png">
-		</div>
-
-		<div id="roomCodeContainer" class="interfaceContainer">
-		  <label id="roomCode">Room: TEST</label>
-		</div>
-
-		<div id="hintContainer" class="interfaceContainer">
-		  <label id="hintLabel">Hints</label>
-		  
-		  <label class="switch">
-			<input id="hintToggle" type="checkbox">
-			<div class="slider round"></div>
-		  </label>
+	  </div>
+	  <div id="joinPuzzle" class="startColumn">
+		<div class="startHereHeader">JOIN A PUZZLE</div>
+		<div id="joinPuzzleBody" class="startHereBody">
+		  <input type="text" placeholder="Name" maxLength="12" class="startInput"></input>
+		  <input type="text" placeholder="Room Code" maxlength="4" class="startInput"></input>
+		  <button>Join!</button>
 		</div>
 	  </div>
 	  
-	  <div id="clues">
-		<div id="acrossClues" class="clues unselectable">
-		  <strong class="clueHeader">ACROSS</strong>
-
-		  <br>
-
-		  <div id="acrossList" class="clueList">
-		  </div>
-		</div>
-
-		<div id="downClues" class="clues unselectable">
-		  <strong class="clueHeader">DOWN</strong>
-
-		  <br>
-		  
-		  <div id="downList" class="clueList">
-		  </div>
-		</div>		
+	  <div id="error">
+		<p>Error: Invalid username</p>
 	  </div>
 	</div>
+	
 
-	<a id="devShortcut" href="http://cdn.games.arkadiumhosted.com/latimes/assets/DailyCrossword/la161219.xml">Dev shortcut</a>
+	<div id="puzzleDiv">
+	  <canvas id="xword" width="600" height="600">xxword requires an HTML5-compatible browser that supports the &lt;canvas&gt; tag.</canvas>
 
+	  <div id="interface">
+		<div id="topI">
 
+		  <div id="colorPickContainer" class="interfaceContainer">
+			<div id="colorPickerButton"></div>
+		  </div>
 
-	<!-- HIDDEN TOOLTIPS ETC. -->
-	<div id="revealOptions">
-	  <div id="revealLetter" class="revealOption">Reveal Letter</div>
-	  <div id="revealWord" class="revealOption">Reveal Word</div>
-	  <div id="revealPuzzle" class="revealOption">Reveal Puzzle</div>
+		  <div id="revealContainer" class="interfaceContainer">
+			<img id="reveal" src="q.png">
+		  </div>
+
+		  <div id="roomCodeContainer" class="interfaceContainer">
+			<label id="roomCode">Room: TEST</label>
+		  </div>
+
+		  <div id="hintContainer" class="interfaceContainer">
+			<label id="hintLabel">Hints</label>
+			
+			<label class="switch">
+			  <input id="hintToggle" type="checkbox">
+			  <div class="slider round"></div>
+			</label>
+		  </div>
+		</div>
+		
+		<div id="clues">
+		  <div id="acrossClues" class="clues unselectable">
+			<strong class="clueHeader">ACROSS</strong>
+
+			<br>
+
+			<div id="acrossList" class="clueList">
+			</div>
+		  </div>
+
+		  <div id="downClues" class="clues unselectable">
+			<strong class="clueHeader">DOWN</strong>
+
+			<br>
+			
+			<div id="downList" class="clueList">
+			</div>
+		  </div>		
+		</div>
+	  </div>
+
+	  <!-- HIDDEN TOOLTIPS ETC. -->
+	  <div id="revealOptions">
+		<div id="revealLetter" class="revealOption">Reveal Letter</div>
+		<div id="revealWord" class="revealOption">Reveal Word</div>
+		<div id="revealPuzzle" class="revealOption">Reveal Puzzle</div>
+	  </div>
+
+	  <div id="colorPicker">
+		<div class="colorSample" data-index="0"></div>
+		<div class="colorSample" data-index="1"></div>
+		<div class="colorSample" data-index="2"></div>
+		<div class="colorSample" data-index="3"></div>
+		<div class="colorSample" data-index="4"></div>
+		<div class="colorSample" data-index="5"></div>
+		<div class="colorSample" data-index="6"></div>
+		<div class="colorSample" data-index="7"></div>
+	  </div>
 	</div>
-
-	<div id="colorPicker">
-	  <div class="colorSample" data-index="0"></div>
-	  <div class="colorSample" data-index="1"></div>
-	  <div class="colorSample" data-index="2"></div>
-	  <div class="colorSample" data-index="3"></div>
-	  <div class="colorSample" data-index="4"></div>
-	  <div class="colorSample" data-index="5"></div>
-	  <div class="colorSample" data-index="6"></div>
-	  <div class="colorSample" data-index="7"></div>
-	</div>
-
 	<script src="xxword.js"></script>
   </body>
 </html>

@@ -1036,35 +1036,79 @@ function initXWord(json) {
 	drawPuzzle(puzzle);
 }
 
-var currentDate = new Date();
-var currentYear = currentDate.getFullYear();
-var currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
-var currentDay = currentDate.getDate();
+function foobar() {
+	var currentDate = new Date();
+	var currentYear = currentDate.getFullYear();
+	var currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
+	var currentDay = currentDate.getDate();
 
-// This will break beyond year 2100... but so will latimes' url format!
-var xwordUrlSuffix =
-	(currentYear - 2000) + "" +
-	padNum(currentMonth, 2) + "" +
-	padNum(currentDay, 2);
+	// This will break beyond year 2100... but so will latimes' url format!
+	var xwordUrlSuffix =
+		(currentYear - 2000) + "" +
+		padNum(currentMonth, 2) + "" +
+		padNum(currentDay, 2);
 
-var xwordUrl = "http://localhost:5000/la" + xwordUrlSuffix;
+	var xwordUrl = "http://localhost:5000/la" + xwordUrlSuffix;
 
-// update dev shortcut link
-{
-	var link = document.getElementById("devShortcut");
-
-	if(link != null) {
-		link.href = xwordUrl;
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState === 4 && this.status === 200) {
+			initXWord(this.responseText);
+		}
 	}
+
+	xhttp.open("GET", xwordUrl);
+	xhttp.send();
 }
 
+var radios = document.getElementsByClassName("sgRadio");
+var startBody = document.getElementById("startPuzzleBody");
+var startButton = document.getElementById("startNewPuzzleBtn");
 
-var xhttp = new XMLHttpRequest();
-xhttp.onreadystatechange = function() {
-	if (this.readyState === 4 && this.status === 200) {
-		initXWord(this.responseText);
-	}
+for(var i = 0; i < radios.length; i++) {
+	radios[i].addEventListener("click", function(e) {
+		var existingForm = document.getElementById("startPuzzleName");
+		
+		if(this.value === "group") {
+			if(existingForm == null) {
+				var nameForm = document.createElement("input");
+				nameForm.type = "text";
+				nameForm.placeholder = "Name";
+				nameForm.maxLength = 12;
+				nameForm.id = "startPuzzleName";
+				nameForm.className = "startInput";
+
+				startBody.insertBefore(nameForm, startButton);
+			}
+		}
+		else {
+			startBody.removeChild(existingForm);
+		}
+	});
 }
 
-xhttp.open("GET", xwordUrl);
-xhttp.send();
+var today = new Date();
+var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var puzzleSelect = document.getElementById("puzzleSelect");
+
+for(var i = 0; i < 14; i++) {
+	var date = new Date();
+	date.setDate(today.getDate() - i);
+
+	var year = date.getFullYear();
+	var month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
+	var day = date.getDate();
+	var dayOfWeek = daysOfWeek[date.getDay()];
+
+	var puzzleString = "LA TIMES - " + dayOfWeek + ", " + months[month - 1] + " " + day + ", " + year;
+	var fileString = "la" + (year - 2000) + "" +
+		padNum(month, 2) + "" +
+		padNum(day, 2) + ".xml";
+	
+	var option = document.createElement("option");
+	option.text = puzzleString;
+	option.value = fileString;
+
+	puzzleSelect.add(option);
+}
