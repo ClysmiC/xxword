@@ -1038,13 +1038,16 @@ function initXWord(json) {
 
 function foobar(sfx) {
 	var xwordUrl = "http://localhost:5000/" + sfx;
-
+	NProgress.start();
+	
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState === 4 && this.status === 200) {
 			document.body.removeChild(document.getElementById("startHere"))
 			document.getElementById("puzzleDiv").style.visibility = "visible";
 			initXWord(this.responseText);
+
+			NProgress.done();
 		}
 	}
 
