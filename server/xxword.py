@@ -9,6 +9,7 @@ app = Flask(__name__)
 laTimeDateRegex = re.compile("[0-9]{6}")
 
 @app.route("/la<date>", methods=['GET'])
+@app.route("/la<date>.xml", methods=['GET'])
 def getXwordLaTimes(date):
     if not laTimeDateRegex.match(date):
         abort(400)

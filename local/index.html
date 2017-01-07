@@ -13,7 +13,7 @@
 		<div class="startHereHeader">START A PUZZLE</div>
 		<div id="startPuzzleBody" class="startHereBody">
 		  <select id="puzzleSelect">
-			<option disabled selected>Select a Puzzle</option>
+			<option value="none" disabled selected>Select a Puzzle</option>
 		  </select>
 
 		  <div id="startRadios">
@@ -21,20 +21,20 @@
 			<div><input type="radio" class="sgRadio" name="soloOrGroup" value="group">Group</div>
 		  </div>
 
-		  <button id="startNewPuzzleBtn">Start!</button>
+		  <button id="startPuzzleBtn">Start!</button>
 		</div>
 	  </div>
 	  <div id="joinPuzzle" class="startColumn">
 		<div class="startHereHeader">JOIN A PUZZLE</div>
 		<div id="joinPuzzleBody" class="startHereBody">
-		  <input type="text" placeholder="Name" maxLength="12" class="startInput"></input>
-		  <input type="text" placeholder="Room Code" maxlength="4" class="startInput"></input>
-		  <button>Join!</button>
+		  <input type="text" placeholder="Your Name" maxLength="12" class="startInput"></input>
+		  <input type="text" placeholder="Group Code" maxlength="4" class="startInput"></input>
+		  <button id="joinPuzzleBtn">Join!</button>
 		</div>
 	  </div>
 	  
 	  <div id="error">
-		<p>Error: Invalid username</p>
+		Error: Sample
 	  </div>
 	</div>
 	

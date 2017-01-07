@@ -1036,23 +1036,14 @@ function initXWord(json) {
 	drawPuzzle(puzzle);
 }
 
-function foobar() {
-	var currentDate = new Date();
-	var currentYear = currentDate.getFullYear();
-	var currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
-	var currentDay = currentDate.getDate();
-
-	// This will break beyond year 2100... but so will latimes' url format!
-	var xwordUrlSuffix =
-		(currentYear - 2000) + "" +
-		padNum(currentMonth, 2) + "" +
-		padNum(currentDay, 2);
-
-	var xwordUrl = "http://localhost:5000/la" + xwordUrlSuffix;
+function foobar(sfx) {
+	var xwordUrl = "http://localhost:5000/" + sfx;
 
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState === 4 && this.status === 200) {
+			document.body.removeChild(document.getElementById("startHere"))
+			document.getElementById("puzzleDiv").style.visibility = "visible";
 			initXWord(this.responseText);
 		}
 	}
@@ -1063,7 +1054,8 @@ function foobar() {
 
 var radios = document.getElementsByClassName("sgRadio");
 var startBody = document.getElementById("startPuzzleBody");
-var startButton = document.getElementById("startNewPuzzleBtn");
+var startButton = document.getElementById("startPuzzleBtn");
+var isSolo = true;
 
 for(var i = 0; i < radios.length; i++) {
 	radios[i].addEventListener("click", function(e) {
@@ -1073,16 +1065,19 @@ for(var i = 0; i < radios.length; i++) {
 			if(existingForm == null) {
 				var nameForm = document.createElement("input");
 				nameForm.type = "text";
-				nameForm.placeholder = "Name";
+				nameForm.placeholder = "Your Name";
 				nameForm.maxLength = 12;
 				nameForm.id = "startPuzzleName";
 				nameForm.className = "startInput";
 
 				startBody.insertBefore(nameForm, startButton);
 			}
+
+			isSolo = false;
 		}
 		else {
 			startBody.removeChild(existingForm);
+			isSolo = true;
 		}
 	});
 }
@@ -1112,3 +1107,49 @@ for(var i = 0; i < 14; i++) {
 
 	puzzleSelect.add(option);
 }
+
+var joinButton = document.getElementById("joinPuzzleBtn");
+var errorDiv = document.getElementById("error");
+
+startButton.addEventListener("click", function(e) {
+	var valid = true;
+	
+	var puzzleName = puzzleSelect.options[puzzleSelect.selectedIndex].value;
+	if(!puzzleName.endsWith(".xml")) {
+		valid = false;
+		errorDiv.innerHTML = "Error: Must select a puzzle";
+		errorDiv.style.visibility = "visible";
+	}
+
+	if(isSolo) {
+		if(valid) {
+			foobar(puzzleName);
+		}
+	}
+	else {
+		var username = document.getElementById("startPuzzleName").value;
+		username = username.trim();
+
+		if(username.length === 0) {
+			valid = false;
+			errorDiv.innerHTML = "Error: Must enter a username to start group puzzle";
+			errorDiv.style.visibility = "visible";
+		}
+
+		for(var i = 0; i < username.length; i++) {
+			var ascii = username.charCodeAt(i);
+
+			if(ascii < 32 || ascii > 125) {
+				valid = false;
+				errorDiv.innerHTML = "Error: Username contains invalid characters";
+				errorDiv.style.visibility = "visible";
+			}
+		}
+
+		
+	}
+});
+
+joinButton.addEventListener("click", function(e) {
+	var bar = 0;
+});

@@ -48,12 +48,10 @@
 	width: 100%;
 	top: 60%;
 	text-align: center;
-}
-
-#error > p {
+	
 	margin: 0;
 	color: red;
-	font-size: 24px;
+	font-size: 24px;	
 }
 
 #xword {
