@@ -639,9 +639,6 @@ function initXWord(json) {
 	];
 
 	{		
-		var acrossClues = puzzle.clues[0];
-		var downClues = puzzle.clues[1];
-
 		var clueClickListener = function(e) {
 			var id = e.target.id;
 			puzzle.interfaceFocused = true;
@@ -664,8 +661,8 @@ function initXWord(json) {
 		};
 		
 		var acrossList = document.getElementById("acrossList");
-		for(var i = 0; i < acrossClues.length; i++) {
-			var clue = acrossClues[i];
+		for(var i = 0; i < puzzle.acrossClues.length; i++) {
+			var clue = puzzle.acrossClues[i];
 			var number = clue.number;
 			var text = clue.text;
 
@@ -680,8 +677,8 @@ function initXWord(json) {
 		}
 
 		var downList = document.getElementById("downList");
-		for(var i = 0; i < downClues.length; i++) {
-			var clue = downClues[i];
+		for(var i = 0; i < puzzle.downClues.length; i++) {
+			var clue = puzzle.downClues[i];
 			var number = clue.number;
 			var text = clue.text;
 
@@ -1156,3 +1153,5 @@ startButton.addEventListener("click", function(e) {
 joinButton.addEventListener("click", function(e) {
 	var bar = 0;
 });
+
+NProgress.configure({ showSpinner: false });
