@@ -1037,19 +1037,32 @@ function foobar(sfx) {
 	var xwordUrl = "http://localhost:5000/" + sfx;
 	NProgress.start();
 	
-	var xhttp = new XMLHttpRequest();
-	xhttp.onreadystatechange = function() {
-		if (this.readyState === 4 && this.status === 200) {
-			document.body.removeChild(document.getElementById("startHere"))
-			document.getElementById("puzzleDiv").style.visibility = "visible";
-			initXWord(this.responseText);
+	var xhr = new XMLHttpRequest();
+	xhr.timeout = 5000;
+	
+	xhr.onreadystatechange = function() {
+		if (this.readyState === XMLHttpRequest.DONE) {
+			if (this.status === 200) {
+				document.body.removeChild(document.getElementById("startHere"))
+				document.getElementById("puzzleDiv").style.visibility = "visible";
+				initXWord(this.responseText);
 
-			NProgress.done();
+				NProgress.done();
+			}
+			else {
+				NProgress.done();
+				alert("Puzzle failed to load. Error code " + this.status);
+			}
 		}
 	}
 
-	xhttp.open("GET", xwordUrl);
-	xhttp.send();
+	xhr.ontimeout = function() {
+		NProgress.done();
+		alert("Request timed out. Server may be down.");
+	}
+
+	xhr.open("GET", xwordUrl);
+	xhr.send();
 }
 
 var radios = document.getElementsByClassName("sgRadio");

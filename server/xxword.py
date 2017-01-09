@@ -6,88 +6,64 @@ import urllib
 import xml.etree.ElementTree as ET
 
 import ZODB, transaction
-import persistent
+
+import string
+import random
+
+from model import *
 
 app = Flask(__name__)
 laTimeDateRegex = re.compile("[0-9]{6}")
 db = ZODB.DB(None)
 
-class Game:
-    def __init__(self, isGroup, puzzle):
-        self.isGroup = isGroup
-        self.puzzle = puzzle
+MAX_GAMES = 1
 
-    def serialize(self):
-        result = {}
-        result['isGroup'] = self.isGroup
-        result['puzzle'] = self.puzzle.serialize()
-        
-        return result
-
-
-    
-class Puzzle:
-    def __init__(self, title, dimension, cells, acrossClues, downClues):
-        self.title = title
-        self.dimension = dimension
-        self.cells = cells
-        self.acrossClues = acrossClues
-        self.downClues = downClues
-
-    def serialize(self):
-        result = {}
-        result['title'] = self.title
-        result['dimension'] = self.dimension
-        result['cells'] = [[ cell.serialize() for cell in row] for row in self.cells ]
-        result['acrossClues'] = [ c.serialize() for c in self.acrossClues ]
-        result['downClues'] = [ c.serialize() for c in self.downClues ]
-
-        return result
-
-    
-class Cell:
-    def __init__(self, x, y, solution, value, number, circled, hinted):
-        self.x = x
-        self.y = y
-        self.solution = solution
-        self.value = value
-        self.number = number
-        self.circled = circled
-        self.hinted = hinted
-
-    def serialize(self):
-        return self.__dict__
-    
-class Clue:
-    def __init__(self, number, orientation, text):
-        self.number = number
-        self.orientation = orientation
-        self.text = text
-
-    def serialize(self):
-        return self.__dict__
-        
-    
-@app.route("/lobby/<username>-la<date>", methods=['GET'])
-def startLobby(username, date):
+@app.before_first_request
+def dbinit():
     conn = db.open()
     dbroot = conn.root
     
+    dbroot.games = {}
+
+    transaction.commit()
+    conn.close()
+
+@app.route("/lobby/<username>-la<date>", methods=['GET'])
+def startLobby(username, date):
     if len(username) == 0 or len(username) > 12:
-        conn.close()
         abort(400)
 
     for char in username:
         if ord(char) < 32 or ord(char) > 125:
-            conn.close()
             abort(400)
             
+    conn = db.open()
+    dbroot = conn.root
 
-    
+    if len(dbroot.games) >= MAX_GAMES:
+        print("Not enough resources to start game")
+        abort(500)
+    else:
+        duplicate = True
+        while duplicate:
+            code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+            if code not in dbroot.games:
+                duplicate = False
+            
+        print("Starting lobby: " + code)
 
-@app.route("/la<date>", methods=['GET'])
-@app.route("/la<date>.xml", methods=['GET'])
-def getXwordLaTimes(date):
+        dbroot.games[code] = Game(True, None, code)
+
+        # TODO
+        # - Fetch puzzle
+        # - Set up users
+        
+        transaction.commit()
+        conn.close()
+
+    return('', 204)
+
+def getXwordLaTimesObject(date):
     if not laTimeDateRegex.match(date):
         abort(400)
         
@@ -169,7 +145,18 @@ def getXwordLaTimes(date):
         downClues.append(Clue(number, "down", text))
 
     puzzle = Puzzle(title, dimension, cells, acrossClues, downClues)
-    result = flask.jsonify(**puzzle.serialize())
+    # result = flask.jsonify(**puzzle.serialize())
+
+    # # Allows for cross domain requests
+    # # ONLY USE FOR TESTING
+    # result.headers.add('Access-Control-Allow-Origin', '*')
+    
+    return puzzle
+
+@app.route("/la<date>", methods=['GET'])
+@app.route("/la<date>.xml", methods=['GET'])
+def getXwordLaTimes(date):
+    result = flask.jsonify(**getXwordLaTimesObject(date).serialize())
 
     # # Allows for cross domain requests
     # # ONLY USE FOR TESTING
