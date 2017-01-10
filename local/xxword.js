@@ -1,6 +1,8 @@
 var secondaryFocusColor = "#CCCCCC"
 var hintedBoxColor = "#FFC3C3"
 
+var isSolo = true;
+
 var userColors = [
 	"#FFDC00",  // yellow
 	"#0074D9",  // blue
@@ -559,8 +561,7 @@ function highlightClue(puzzle, number, orientation, color, autoScroll) {
 	}
 }
 
-function initXWord(json) {
-	var puzzle = JSON.parse(json);
+function initXWord(puzzle, code) {
 	puzzle.solved = false;
 	puzzle.highlightedDown = -1;
 	puzzle.highlightedAcross = -1;
@@ -1029,11 +1030,20 @@ function initXWord(json) {
 	cp.addEventListener("mouseout", function(e) {
 		this.setAttribute("data-mouseIsOver", "false");
 	});
+
+
+	// Add room code above the clues
+	if(code != null) {
+		codeLabel = document.getElementById("roomCode");
+		codeLabel.innerHTML = "Room: " + code;
+	}
 	
 	drawPuzzle(puzzle);
 }
 
-function foobar(sfx) {
+function startSoloXword(sfx) {
+	isSolo = true;
+	
 	var xwordUrl = "http://localhost:5000/" + sfx;
 	NProgress.start();
 	
@@ -1045,7 +1055,45 @@ function foobar(sfx) {
 			if (this.status === 200) {
 				document.body.removeChild(document.getElementById("startHere"))
 				document.getElementById("puzzleDiv").style.visibility = "visible";
-				initXWord(this.responseText);
+
+				var response = JSON.parse(this.responseText);
+				initXWord(response.payload);
+
+				NProgress.done();
+			}
+			else {
+				NProgress.done();
+				alert("Puzzle failed to load. Error code " + this.status);
+			}
+		}
+	}
+
+	xhr.ontimeout = function() {
+		NProgress.done();
+		alert("Request timed out. Server may be down.");
+	}
+
+	xhr.open("GET", xwordUrl);
+	xhr.send();
+}
+
+function startGroupXword(name, sfx) {
+	isSolo = false;
+	
+	var xwordUrl = "http://localhost:5000/lobby/" + name + "-" + sfx;
+	NProgress.start();
+	
+	var xhr = new XMLHttpRequest();
+	xhr.timeout = 5000;
+	
+	xhr.onreadystatechange = function() {
+		if (this.readyState === XMLHttpRequest.DONE) {
+			if (this.status === 200) {
+				document.body.removeChild(document.getElementById("startHere"))
+				document.getElementById("puzzleDiv").style.visibility = "visible";
+				
+				var response = JSON.parse(this.responseText);
+				initXWord(response.payload.puzzle, response.payload.code);
 
 				NProgress.done();
 			}
@@ -1068,7 +1116,6 @@ function foobar(sfx) {
 var radios = document.getElementsByClassName("sgRadio");
 var startBody = document.getElementById("startPuzzleBody");
 var startButton = document.getElementById("startPuzzleBtn");
-var isSolo = true;
 
 for(var i = 0; i < radios.length; i++) {
 	radios[i].addEventListener("click", function(e) {
@@ -1136,7 +1183,7 @@ startButton.addEventListener("click", function(e) {
 
 	if(isSolo) {
 		if(valid) {
-			foobar(puzzleName);
+			startSoloXword(puzzleName);
 		}
 	}
 	else {
@@ -1159,7 +1206,10 @@ startButton.addEventListener("click", function(e) {
 			}
 		}
 
-		
+
+		if(valid) {
+			startGroupXword(username, puzzleName);
+		}
 	}
 });
 

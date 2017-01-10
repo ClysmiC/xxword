@@ -9,6 +9,7 @@ import ZODB, transaction
 
 import string
 import random
+import json
 
 from model import *
 
@@ -17,6 +18,17 @@ laTimeDateRegex = re.compile("[0-9]{6}")
 db = ZODB.DB(None)
 
 MAX_GAMES = 1
+
+userColors = [
+    "#FFDC00",  # yellow
+    "#0074D9",  # blue
+    "#2ECC40",  # green
+    "#FF851B",  # orange
+    "#F012BE",  # fuchsia
+    "#795548",  # brown
+    "#7FDBFF",  # aqua
+    "#B10DC9",  # purple
+];
 
 @app.before_first_request
 def dbinit():
@@ -29,6 +41,7 @@ def dbinit():
     conn.close()
 
 @app.route("/lobby/<username>-la<date>", methods=['GET'])
+@app.route("/lobby/<username>-la<date>.xml", methods=['GET'])
 def startLobby(username, date):
     if len(username) == 0 or len(username) > 12:
         abort(400)
@@ -43,25 +56,34 @@ def startLobby(username, date):
     if len(dbroot.games) >= MAX_GAMES:
         print("Not enough resources to start game")
         abort(500)
-    else:
-        duplicate = True
-        while duplicate:
-            code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-            if code not in dbroot.games:
-                duplicate = False
-            
-        print("Starting lobby: " + code)
-
-        dbroot.games[code] = Game(True, None, code)
-
-        # TODO
-        # - Fetch puzzle
-        # - Set up users
         
-        transaction.commit()
-        conn.close()
+    duplicate = True
+    while duplicate:
+        code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        if code not in dbroot.games:
+            duplicate = False
 
-    return('', 204)
+    print("Starting lobby: " + code)
+
+    puzzle = getXwordLaTimesObject(date)
+    game = Game(True, puzzle, code)
+    user = User(username, userColors[0])
+
+    game.users.append(user)
+
+    dbroot.games[code] = game 
+
+    transaction.commit()
+    conn.close()
+
+    resultStr = '{ "type": "groupPuzzleStart", "payload": ' + json.dumps(game.serialize()) + '}'
+
+    # # Allows for cross domain requests
+    # # ONLY USE FOR TESTING
+    result = Response(resultStr)
+    result.headers.add('Access-Control-Allow-Origin', '*')
+
+    return result
 
 def getXwordLaTimesObject(date):
     if not laTimeDateRegex.match(date):
@@ -145,21 +167,18 @@ def getXwordLaTimesObject(date):
         downClues.append(Clue(number, "down", text))
 
     puzzle = Puzzle(title, dimension, cells, acrossClues, downClues)
-    # result = flask.jsonify(**puzzle.serialize())
-
-    # # Allows for cross domain requests
-    # # ONLY USE FOR TESTING
-    # result.headers.add('Access-Control-Allow-Origin', '*')
     
     return puzzle
 
 @app.route("/la<date>", methods=['GET'])
 @app.route("/la<date>.xml", methods=['GET'])
 def getXwordLaTimes(date):
-    result = flask.jsonify(**getXwordLaTimesObject(date).serialize())
+    resultStr = '{ "type": "soloPuzzle", "payload": ' + json.dumps(getXwordLaTimesObject(date).serialize()) + '}'
+    # result = flask.jsonify(**getXwordLaTimesObject(date).serialize())
 
     # # Allows for cross domain requests
     # # ONLY USE FOR TESTING
+    result = Response(resultStr)
     result.headers.add('Access-Control-Allow-Origin', '*')
     
     return result

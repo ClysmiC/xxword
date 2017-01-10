@@ -105,6 +105,42 @@
 	margin: 8px 5px;
 }
 
+#chatHeader {
+	font-family: sans-serif;
+	pointer-events: none;
+}
+
+#chat {
+	font-family: sans-serif;
+	margin: 1em;
+	margin-top: 3em;
+}
+
+#chatWindow {
+	border: 1px solid black;
+}
+
+#messages {
+	height: 15em;
+}
+
+#chatText {
+	width: 94%;
+	resize: vertical;
+	margin-left: 3%;
+	margin-right: 3%;
+}
+
+#chatSubmitDiv {
+	display: flex;
+}
+
+#chatSubmit {
+	/* align-self: flex-end; */
+	margin-left: auto;
+	margin-right: 3%;
+}
+
 #hintLabel {
 	font-family: sans-serif;
 	font-size: 16px;

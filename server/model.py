@@ -3,12 +3,14 @@ class Game:
         self.isGroup = isGroup
         self.puzzle = puzzle
         self.code = code
+        self.users = []
 
     def serialize(self):
         result = {}
         result['isGroup'] = self.isGroup
         result['puzzle'] = self.puzzle.serialize()
         result['code'] = self.code
+        result['users'] = [ user.serialize() for user in self.users ]
         
         return result
 
@@ -51,6 +53,15 @@ class Clue:
         self.number = number
         self.orientation = orientation
         self.text = text
+
+    def serialize(self):
+        return self.__dict__
+
+
+class User:
+    def __init__(self, name, color):
+        self.name = name
+        self.color = color
 
     def serialize(self):
         return self.__dict__
